@@ -1,10 +1,5 @@
-import AdminLayout from "./admin/layout";
-import AdminPage from "./admin/page";
+import LandingPage from "./home-page/page";
 
 export default function Home() {
-  return (
-    <AdminLayout>
-      <AdminPage />
-    </AdminLayout>
-  );
+  return <LandingPage />;
 }
