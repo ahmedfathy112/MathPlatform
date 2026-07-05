@@ -1,11 +1,13 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
+  AlertCircle,
   ChevronDown,
   Eye,
   EyeOff,
@@ -16,8 +18,13 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+import { createClient } from "../../utils/supabase/client";
+import {
+  GRADE_UI_TO_ENUM,
+  fetchProfileWithRetry,
+  phoneToSyntheticEmail,
+} from "../../utils/supabase/auth-helpers";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const gradeOptions = [
   { value: "first", label: "الصف الأول الثانوي" },
@@ -47,6 +54,22 @@ const registrationSchema = z
     path: ["confirmPassword"],
     message: "كلمتا المرور غير متطابقتين",
   });
+
+function ErrorBanner({ message }) {
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+    >
+      <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+      <span>{message}</span>
+    </div>
+  );
+}
 
 function FieldMessage({ error, id }) {
   if (!error) {
@@ -107,7 +130,14 @@ function TextField({
   );
 }
 
-function SelectField({ id, label, error, registerProps, placeholder, options }) {
+function SelectField({
+  id,
+  label,
+  error,
+  registerProps,
+  placeholder,
+  options,
+}) {
   return (
     <div className="space-y-2">
       <label
@@ -139,7 +169,10 @@ function SelectField({ id, label, error, registerProps, placeholder, options }) 
             </option>
           ))}
         </select>
-        <ChevronDown className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
+        <ChevronDown
+          className="h-5 w-5 shrink-0 text-slate-400"
+          aria-hidden="true"
+        />
       </div>
       <FieldMessage id={`${id}-error`} error={error} />
     </div>
@@ -200,6 +233,10 @@ function PasswordField({
 }
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const [formError, setFormError] = useState(null);
+  const setSession = useAuthStore((state) => state.setSession);
+
   const {
     register,
     handleSubmit,
@@ -216,12 +253,80 @@ export default function RegisterPage() {
     },
   });
 
-  const onSubmit = async () => {
-    await sleep(900);
+  const onSubmit = async ({ fullName, phone, grade, password }) => {
+    setFormError(null);
+    const supabase = createClient();
+    const email = phoneToSyntheticEmail(phone);
+
+    // full_name/phone/grade_level ride along as auth metadata; the
+    // on_auth_user_created trigger (16_handle_new_user_trigger.sql) uses
+    // them to create the matching `profiles` row in the SAME transaction
+    // as the auth user, so there's no window where the user exists but the
+    // profile doesn't.
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
+      {
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone,
+            grade_level: GRADE_UI_TO_ENUM[grade],
+          },
+        },
+      },
+    );
+
+    if (signUpError) {
+      setFormError(
+        signUpError.message?.includes("duplicate")
+          ? "رقم الهاتف مسجل بالفعل. جرّب تسجيل الدخول بدلًا من ذلك."
+          : "تعذر إنشاء الحساب. حاول مرة أخرى.",
+      );
+      return;
+    }
+
+    // Supabase's sign-up quirk: if this email/phone is already registered,
+    // signUp() can return a user with an empty `identities` array instead
+    // of a hard error.
+    if (signUpData.user && signUpData.user.identities?.length === 0) {
+      setFormError("رقم الهاتف مسجل بالفعل. جرّب تسجيل الدخول بدلًا من ذلك.");
+      return;
+    }
+
+    if (!signUpData.session) {
+      // Email confirmation is likely still enabled on this Supabase project.
+      // Since we use a synthetic, non-deliverable email, that confirmation
+      // link can never arrive — this must be turned off for phone-based
+      // registration to work (Auth -> Providers -> Email -> Confirm email).
+      setFormError(
+        "تم إنشاء الحساب لكن لم يتم تفعيل الجلسة تلقائيًا. يرجى التواصل مع الدعم الفني.",
+      );
+      return;
+    }
+
+    // The trigger already created the profile row by the time signUp()
+    // resolved, but we still retry briefly in case of replication lag on
+    // read replicas — this is defensive, not the actual race fix.
+    const profile = await fetchProfileWithRetry(supabase, signUpData.user.id);
+
+    if (!profile) {
+      setFormError(
+        "تم إنشاء الحساب لكن تعذر تحميل بيانات الطالب. حاول تسجيل الدخول يدويًا.",
+      );
+      return;
+    }
+
+    setSession(signUpData.user, profile);
+    router.push("/dashboard/subscriptions");
+    router.refresh();
   };
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <main
+      dir="rtl"
+      className="min-h-screen bg-[var(--background)] text-[var(--foreground)]"
+    >
       <div className="mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
         <div className="w-full max-w-3xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900">
           <div className="h-2 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500" />
@@ -236,8 +341,8 @@ export default function RegisterPage() {
                   ابدأ رحلتك التعليمية من حساب منظم وآمن
                 </h1>
                 <p className="max-w-2xl text-sm leading-7 text-slate-600">
-                  أدخل بياناتك بدقة لتتمكن من متابعة الدروس، والاختبارات، وإجمالي
-                  تقدمك بسهولة.
+                  أدخل بياناتك بدقة لتتمكن من متابعة الدروس، والاختبارات،
+                  وإجمالي تقدمك بسهولة.
                 </p>
               </div>
             </div>
@@ -247,7 +352,13 @@ export default function RegisterPage() {
               بدون أي تعارضات.
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              noValidate
+              className="space-y-5"
+            >
+              <ErrorBanner message={formError} />
+
               <div className="grid gap-5 md:grid-cols-2">
                 <TextField
                   id="student-full-name"
@@ -269,7 +380,8 @@ export default function RegisterPage() {
                   inputMode="numeric"
                   maxLength={11}
                   registerProps={register("phone", {
-                    setValueAs: (value) => String(value ?? "").replace(/\D/g, ""),
+                    setValueAs: (value) =>
+                      String(value ?? "").replace(/\D/g, ""),
                   })}
                 />
               </div>
@@ -309,9 +421,14 @@ export default function RegisterPage() {
                 className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-500/30 disabled:cursor-not-allowed disabled:bg-sky-400"
               >
                 {isSubmitting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                  <Loader2
+                    className="h-5 w-5 animate-spin"
+                    aria-hidden="true"
+                  />
                 ) : null}
-                <span>{isSubmitting ? "جارٍ إنشاء الحساب..." : "إنشاء الحساب"}</span>
+                <span>
+                  {isSubmitting ? "جارٍ إنشاء الحساب..." : "إنشاء الحساب"}
+                </span>
               </button>
 
               <div className="text-center text-sm text-slate-600">

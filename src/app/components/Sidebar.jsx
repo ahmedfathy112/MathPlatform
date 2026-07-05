@@ -7,7 +7,11 @@ import { Home, PackageOpen, CalendarDays, Sparkles } from "lucide-react";
 const links = [
   { href: "/dashboard", label: "الرئيسية", icon: Home },
   { href: "/dashboard/packages", label: "تصفح الباقات", icon: PackageOpen },
-  { href: "/dashboard/exams", label: "جدول الامتحانات", icon: CalendarDays },
+  {
+    href: "/dashboard/classes/exams",
+    label: "جدول الامتحانات",
+    icon: CalendarDays,
+  },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {

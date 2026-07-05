@@ -1,5 +1,6 @@
-import AdminSidebar from "@/components/AdminSidebar";
-import AdminNavbar from "@/components/AdminNavbar";
+import AdminSidebar from "../components/AdminSidebar";
+import AdminNavbar from "../components/AdminNavbar";
+import RequireRole from "../components/auth/RequireRole";
 
 export const metadata = {
   title: "لوحة الإدارة",
@@ -18,7 +19,7 @@ export default function AdminLayout({ children }) {
 
         <main className="flex-1 overflow-y-auto bg-[var(--background)] dark:bg-slate-950">
           <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            {children}
+            <RequireRole allow={["teacher"]}>{children}</RequireRole>
           </div>
         </main>
       </div>

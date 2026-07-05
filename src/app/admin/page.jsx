@@ -1,112 +1,14 @@
 "use client";
 
-import {
-  Users,
-  TrendingUp,
-  Clock,
-  Package,
-  ArrowUpRight,
-  ArrowDownRight,
-  MoreVertical,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Users, TrendingUp, Clock, Package } from "lucide-react";
+import { createClient } from "../utils/supabase/client";
+import { useToast } from "../components/ui/ToastProvider";
+import { Skeleton } from "../components/ui/Skeleton";
+import { formatDateTime } from "../utils/supabase/adminHelpers";
 
-export default function AdminPage() {
-  const stats = [
-    {
-      label: "إجمالي الطلاب",
-      value: "1,245",
-      change: "+12%",
-      trend: "up",
-      icon: Users,
-      color: "from-blue-500 to-blue-600",
-      lightColor: "bg-blue-100 dark:bg-blue-900/30",
-    },
-    {
-      label: "أرباح الشهر",
-      value: "45,320 ج.م",
-      change: "+8%",
-      trend: "up",
-      icon: TrendingUp,
-      color: "from-emerald-500 to-emerald-600",
-      lightColor: "bg-emerald-100 dark:bg-emerald-900/30",
-    },
-    {
-      label: "الطلبة المعلقين",
-      value: "38",
-      change: "-5%",
-      trend: "down",
-      icon: Clock,
-      color: "from-orange-500 to-orange-600",
-      lightColor: "bg-orange-100 dark:bg-orange-900/30",
-    },
-    {
-      label: "الباقات النشطة",
-      value: "12",
-      change: "+2",
-      trend: "up",
-      icon: Package,
-      color: "from-purple-500 to-purple-600",
-      lightColor: "bg-purple-100 dark:bg-purple-900/30",
-    },
-  ];
-
-  const activities = [
-    {
-      id: 1,
-      type: "new_student",
-      userName: "محمد أحمد علي",
-      action: "انضم طالب جديد",
-      time: "قبل 5 دقائق",
-      package: "باقة متوسطة",
-      icon: "👤",
-    },
-    {
-      id: 2,
-      type: "payment",
-      userName: "فاطمة محمد",
-      action: "تم الدفع بنجاح",
-      time: "قبل 20 دقيقة",
-      amount: "450 ج.م",
-      icon: "💳",
-    },
-    {
-      id: 3,
-      type: "exam_completed",
-      userName: "سارة إبراهيم",
-      action: "أكملت الاختبار",
-      time: "قبل ساعة",
-      score: "92%",
-      icon: "📝",
-    },
-    {
-      id: 4,
-      type: "new_student",
-      userName: "يوسف محمود",
-      action: "انضم طالب جديد",
-      time: "قبل ساعتين",
-      package: "باقة بريميوم",
-      icon: "👤",
-    },
-    {
-      id: 5,
-      type: "payment",
-      userName: "نور العطار",
-      action: "تم الدفع بنجاح",
-      time: "قبل 3 ساعات",
-      amount: "650 ج.م",
-      icon: "💳",
-    },
-  ];
-
-  const StatCard = ({
-    label,
-    value,
-    change,
-    trend,
-    icon: Icon,
-    color,
-    lightColor,
-  }) => (
+function StatCard({ label, value, icon: Icon, lightColor }) {
+  return (
     <div className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-start justify-between">
         <div>
@@ -116,32 +18,143 @@ export default function AdminPage() {
           <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
             {value}
           </p>
-          <div className="mt-4 flex items-center gap-1">
-            {trend === "up" ? (
-              <ArrowUpRight size={16} className="text-emerald-500" />
-            ) : (
-              <ArrowDownRight size={16} className="text-slate-400" />
-            )}
-            <span
-              className={`text-sm font-semibold ${
-                trend === "up"
-                  ? "text-emerald-500"
-                  : "text-slate-500 dark:text-slate-400"
-              }`}
-            >
-              {change}
-            </span>
-          </div>
         </div>
         <div className={`${lightColor} rounded-lg p-3`}>
-          <Icon
-            size={24}
-            className="bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-transparent dark:from-white dark:to-slate-300"
-          />
+          <Icon size={24} className="text-slate-700 dark:text-slate-200" />
         </div>
       </div>
     </div>
   );
+}
+
+export default function AdminPage() {
+  const { showToast } = useToast();
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    pendingRequests: 0,
+    activeSubjects: 0,
+    revenue: 0,
+  });
+  const [topSubjects, setTopSubjects] = useState([]);
+  const [activity, setActivity] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function load() {
+      setIsLoading(true);
+
+      const [
+        { count: totalStudents },
+        { count: pendingRequests },
+        { data: subjectRows },
+        { data: approvedRequests, error: approvedError },
+        { data: activeSubscriptionRows },
+        { data: recentStudents },
+        { data: recentRequests },
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("role", "student"),
+        supabase
+          .from("payment_requests")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
+        supabase.from("subjects").select("id, name").eq("is_active", true),
+        supabase
+          .from("payment_requests")
+          .select("amount_claimed")
+          .eq("status", "approved"),
+        supabase
+          .from("subscriptions")
+          .select("subject_id")
+          .eq("status", "active"),
+        supabase
+          .from("profiles")
+          .select("id, full_name, created_at")
+          .eq("role", "student")
+          .order("created_at", { ascending: false })
+          .limit(5),
+        supabase
+          .from("payment_requests")
+          .select(
+            "id, status, amount_claimed, created_at, student:student_id(full_name), subject:subject_id(name)",
+          )
+          .in("status", ["approved", "rejected"])
+          .order("reviewed_at", { ascending: false })
+          .limit(5),
+      ]);
+
+      if (cancelled) return;
+
+      if (approvedError) {
+        showToast({
+          type: "error",
+          message: "تعذر تحميل بعض إحصائيات لوحة التحكم.",
+        });
+      }
+
+      const revenue = (approvedRequests ?? []).reduce(
+        (sum, row) => sum + Number(row.amount_claimed || 0),
+        0,
+      );
+
+      const activeCountBySubject = new Map();
+      (activeSubscriptionRows ?? []).forEach((row) => {
+        activeCountBySubject.set(
+          row.subject_id,
+          (activeCountBySubject.get(row.subject_id) ?? 0) + 1,
+        );
+      });
+
+      const rankedSubjects = (subjectRows ?? [])
+        .map((subject) => ({
+          ...subject,
+          activeStudents: activeCountBySubject.get(subject.id) ?? 0,
+        }))
+        .sort((a, b) => b.activeStudents - a.activeStudents)
+        .slice(0, 5);
+
+      const mergedActivity = [
+        ...(recentStudents ?? []).map((s) => ({
+          id: `student-${s.id}`,
+          icon: "👤",
+          label: `انضم طالب جديد: ${s.full_name}`,
+          time: s.created_at,
+        })),
+        ...(recentRequests ?? []).map((r) => ({
+          id: `request-${r.id}`,
+          icon: r.status === "approved" ? "💳" : "🚫",
+          label:
+            r.status === "approved"
+              ? `تم تفعيل اشتراك ${r.student?.full_name ?? ""} في ${r.subject?.name ?? ""}`
+              : `تم رفض طلب ${r.student?.full_name ?? ""} في ${r.subject?.name ?? ""}`,
+          time: r.created_at,
+        })),
+      ]
+        .sort((a, b) => new Date(b.time) - new Date(a.time))
+        .slice(0, 8);
+
+      setStats({
+        totalStudents: totalStudents ?? 0,
+        pendingRequests: pendingRequests ?? 0,
+        activeSubjects: subjectRows?.length ?? 0,
+        revenue,
+      });
+      setTopSubjects(rankedSubjects);
+      setActivity(mergedActivity);
+      setIsLoading(false);
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -155,9 +168,30 @@ export default function AdminPage() {
       </div>
 
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, idx) => (
-          <StatCard key={idx} {...stat} />
-        ))}
+        <StatCard
+          label="إجمالي الطلاب"
+          value={isLoading ? "..." : stats.totalStudents}
+          icon={Users}
+          lightColor="bg-blue-100 dark:bg-blue-900/30"
+        />
+        <StatCard
+          label="إجمالي الإيرادات المعتمدة"
+          value={isLoading ? "..." : `${stats.revenue.toLocaleString()} ج.م`}
+          icon={TrendingUp}
+          lightColor="bg-emerald-100 dark:bg-emerald-900/30"
+        />
+        <StatCard
+          label="طلبات معلقة"
+          value={isLoading ? "..." : stats.pendingRequests}
+          icon={Clock}
+          lightColor="bg-orange-100 dark:bg-orange-900/30"
+        />
+        <StatCard
+          label="المواد النشطة"
+          value={isLoading ? "..." : stats.activeSubjects}
+          icon={Package}
+          lightColor="bg-purple-100 dark:bg-purple-900/30"
+        />
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -167,152 +201,77 @@ export default function AdminPage() {
           </h2>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
-                  النشاط
-                </th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
-                  المستخدم
-                </th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
-                  التفاصيل
-                </th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
-                  الوقت
-                </th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
-                  الإجراءات
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {activities.map((activity) => (
-                <tr
-                  key={activity.id}
-                  className="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/50"
-                >
-                  <td className="px-6 py-4">
-                    <span className="text-2xl">{activity.icon}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">
-                      {activity.userName}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm text-slate-900 dark:text-white">
-                        {activity.action}
-                      </p>
-                      {activity.package && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {activity.package}
-                        </p>
-                      )}
-                      {activity.amount && (
-                        <span className="inline-flex w-fit rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                          {activity.amount}
-                        </span>
-                      )}
-                      {activity.score && (
-                        <span className="inline-flex w-fit rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                          {activity.score}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {activity.time}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300">
-                      <MoreVertical size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="border-t border-slate-200 px-6 py-4 dark:border-slate-700">
-          <button className="text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-            عرض جميع النشاطات →
-          </button>
-        </div>
-      </div>
-
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            أفضل الدورات
-          </h3>
-          <div className="mt-6 space-y-4">
-            {[
-              { name: "الجبر المتقدم", students: 245, progress: 78 },
-              { name: "الهندسة التحليلية", students: 198, progress: 65 },
-              { name: "التحليل والتفاضل", students: 156, progress: 82 },
-            ].map((course, idx) => (
-              <div key={idx} className="flex items-end justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">
-                    {course.name}
+        {isLoading ? (
+          <div className="p-6">
+            <Skeleton className="h-56 w-full" />
+          </div>
+        ) : activity.length === 0 ? (
+          <p className="p-6 text-sm text-slate-500 dark:text-slate-400">
+            لا توجد نشاطات بعد.
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+            {activity.map((item) => (
+              <li key={item.id} className="flex items-center gap-4 px-6 py-4">
+                <span className="text-2xl">{item.icon}</span>
+                <div className="flex-1">
+                  <p className="text-sm text-slate-900 dark:text-white">
+                    {item.label}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {course.students} طالب
+                    {formatDateTime(item.time)}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-24 rounded-full bg-slate-200 dark:bg-slate-700">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"
-                      style={{ width: `${course.progress}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                    {course.progress}%
-                  </span>
-                </div>
-              </div>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        )}
+      </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            الإحصائيات الشهرية
-          </h3>
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+          أكثر المواد اشتراكًا
+        </h3>
+        {isLoading ? (
+          <Skeleton className="mt-6 h-40 w-full" />
+        ) : topSubjects.length === 0 ? (
+          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
+            لا توجد بيانات اشتراك بعد.
+          </p>
+        ) : (
           <div className="mt-6 space-y-4">
-            {[
-              { label: "الإيرادات", value: "45,320", change: "+12%" },
-              { label: "الطلاب الجدد", value: "143", change: "+8%" },
-              { label: "الاختبارات", value: "287", change: "+15%" },
-              { label: "الاكتمال", value: "72%", change: "+3%" },
-            ].map((stat, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50"
-              >
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {stat.label}
-                </p>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                    {stat.change}
-                  </p>
+            {topSubjects.map((subject) => {
+              const maxCount = topSubjects[0]?.activeStudents || 1;
+              const width = Math.max(
+                6,
+                Math.round((subject.activeStudents / maxCount) * 100),
+              );
+              return (
+                <div
+                  key={subject.id}
+                  className="flex items-end justify-between gap-4"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      {subject.name}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {subject.activeStudents} طالب نشط
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-32 rounded-full bg-slate-200 dark:bg-slate-700">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"
+                        style={{ width: `${width}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

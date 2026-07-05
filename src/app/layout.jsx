@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono, Cairo } from "next/font/google";
 import "./globals.css";
-import ThemeToggle from "@/components/ThemeToggle";
+import ThemeToggle from "../app/components/ThemeToggle";
+import AuthListener from "../app/components/auth/AuthListener";
+import { ToastProvider } from "../app/components/ui/ToastProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,8 +40,11 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} min-h-full flex flex-col antialiased bg-[var(--background)] text-[var(--foreground)]`}
       >
-        {children}
-        <ThemeToggle />
+        <ToastProvider>
+          <AuthListener />
+          {children}
+          <ThemeToggle />
+        </ToastProvider>
       </body>
     </html>
   );

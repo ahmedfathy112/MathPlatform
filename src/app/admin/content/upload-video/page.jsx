@@ -1,203 +1,193 @@
 "use client";
 
-import { useState } from "react";
-import { UploadCloud, FileText, Star, Check, ArrowUpRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Link2, Loader2, UploadCloud } from "lucide-react";
+import { createClient } from "../../../utils/supabase/client";
+import { useToast } from "../../../components/ui/ToastProvider";
+import { GRADE_LABELS } from "../../../utils/supabase/adminHelpers";
+
+const videoSchema = z.object({
+  subjectId: z.string().min(1, "يرجى اختيار المادة"),
+  title: z.string().trim().min(3, "يرجى إدخال عنوان الدرس"),
+  description: z.string().optional(),
+  videoUrl: z
+    .string()
+    .trim()
+    .min(5, "يرجى إدخال رابط الفيديو")
+    .url("يرجى إدخال رابط صحيح"),
+});
 
 export default function UploadVideoPage() {
-  const [formState, setFormState] = useState({
-    course: "الجبر المتقدم",
-    title: "",
-    description: "",
-    videoUrl: "",
-    resources: "",
-    publish: false,
+  const router = useRouter();
+  const { showToast } = useToast();
+  const [subjects, setSubjects] = useState([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(videoSchema),
+    defaultValues: { subjectId: "", title: "", description: "", videoUrl: "" },
   });
-  const [submitted, setSubmitted] = useState(false);
 
-  const handleChange = (field) => (event) => {
-    const value =
-      field === "publish" ? event.target.checked : event.target.value;
-    setFormState((prev) => ({ ...prev, [field]: value }));
-    setSubmitted(false);
-  };
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setSubmitted(true);
+    async function load() {
+      setIsLoadingSubjects(true);
+      const { data, error } = await supabase
+        .from("subjects")
+        .select("id, name, grade_level")
+        .order("name");
+
+      if (cancelled) return;
+
+      if (error) {
+        showToast({ type: "error", message: "تعذر تحميل قائمة المواد." });
+      }
+
+      setSubjects(data ?? []);
+      setIsLoadingSubjects(false);
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onSubmit = async ({ subjectId, title, description, videoUrl }) => {
+    const supabase = createClient();
+
+    const { error } = await supabase.from("videos").insert({
+      subject_id: subjectId,
+      title,
+      description: description?.trim() || null,
+      video_url: videoUrl,
+      created_by: process.env.NEXT_PUBLIC_SUPABASE_TEACHER,
+    });
+
+    if (error) {
+      showToast({ type: "error", message: "تعذر رفع الفيديو." });
+      return;
+    }
+
+    showToast({ type: "success", message: "تم إضافة الفيديو بنجاح." });
+    reset();
+    router.push("/admin/courses");
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mx-auto max-w-2xl space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+          إضافة فيديو جديد
+        </h1>
+        <p className="mt-1 text-slate-600 dark:text-slate-400">
+          أضف رابط فيديو خارجي (مثل Bunny.net) إلى إحدى المواد الدراسية.
+        </p>
+      </div>
+
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+      >
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            تحميل فيديو تعليمي
-          </h1>
-          <p className="mt-1 text-slate-600 dark:text-slate-400">
-            أضف درس فيديو جديد إلى دورة موجودة مع الموارد والمختصرات.
-          </p>
-        </div>
-        <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 dark:bg-slate-900 dark:text-white">
-          <UploadCloud size={18} /> حزمة المحتوى
-        </div>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.4fr,0.8fr]">
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800"
-        >
-          <div className="grid gap-6">
-            <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                الدورة
-              </label>
-              <select
-                value={formState.course}
-                onChange={handleChange("course")}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-500/20"
-              >
-                <option>الجبر المتقدم</option>
-                <option>الهندسة التحليلية</option>
-                <option>التحليل والتفاضل</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                عنوان الفيديو
-              </label>
-              <input
-                value={formState.title}
-                onChange={handleChange("title")}
-                placeholder="أدخل عنوان الدرس"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-500/20"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                رابط الفيديو
-              </label>
-              <input
-                value={formState.videoUrl}
-                onChange={handleChange("videoUrl")}
-                placeholder="https://"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-500/20"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                وصف الدرس
-              </label>
-              <textarea
-                value={formState.description}
-                onChange={handleChange("description")}
-                rows={5}
-                placeholder="أضف وصفاً موجزاً للمحتوى والنتائج التعليمية"
-                className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-500/20"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                الموارد المرفقة
-              </label>
-              <input
-                value={formState.resources}
-                onChange={handleChange("resources")}
-                placeholder="مثلاً: ملاحظات PDF أو اختبار تدريبي"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-500/20"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                    نشر الفيديو
-                  </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    اختيار الحالة المرئية للطلاب بعد حفظ المحتوى
-                  </p>
-                </div>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                  <input
-                    type="checkbox"
-                    checked={formState.publish}
-                    onChange={handleChange("publish")}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  نشر الآن
-                </label>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl"
-            >
-              <UploadCloud size={18} /> حفظ الفيديو
-            </button>
-          </div>
-
-          {submitted && (
-            <div className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-900/10 dark:text-emerald-200">
-              <div className="flex items-center gap-2">
-                <Check size={18} />
-                <span>تم حفظ الدرس بنجاح! يمكن للطلاب الوصول إليه الآن.</span>
-              </div>
-            </div>
-          )}
-        </form>
-
-        <aside className="space-y-6 rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-800">
-            <div className="flex items-center gap-3 text-slate-900 dark:text-white">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white">
-                <FileText size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold">نصيحة للمحتوى</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  استخدم عناوين واضحة ووصفًا موجزًا لتحسين تجربة الطلاب.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              إرشادات سريعة
-            </h2>
-            <ul className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-400">
-              <li className="flex items-start gap-3">
-                <Star size={18} className="mt-1 text-yellow-500" /> اختر اسمًا
-                موجزًا وواضحًا.
-              </li>
-              <li className="flex items-start gap-3">
-                <Star size={18} className="mt-1 text-yellow-500" /> أضف رابط
-                فيديو صالح من منصة آمنة.
-              </li>
-              <li className="flex items-start gap-3">
-                <Star size={18} className="mt-1 text-yellow-500" /> ضمّن موارد
-                إضافية لتثبيت التعلم.
-              </li>
-            </ul>
-          </div>
-
-          <div className="rounded-3xl bg-blue-950/10 p-5 text-sm text-slate-900 dark:text-white dark:bg-blue-950/20">
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-semibold">خطوة إضافية</p>
-              <ArrowUpRight size={18} />
-            </div>
-            <p className="mt-3 text-slate-600 dark:text-slate-400">
-              بعد الحفظ، يمكنك تعزيز الفيديو باختبار قصير وسؤال واجب.
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            المادة الدراسية
+          </label>
+          <select
+            {...register("subjectId")}
+            disabled={isLoadingSubjects}
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          >
+            <option value="">
+              {isLoadingSubjects ? "جارٍ التحميل..." : "اختر المادة"}
+            </option>
+            {subjects.map((subject) => (
+              <option key={subject.id} value={subject.id}>
+                {subject.name} —{" "}
+                {GRADE_LABELS[subject.grade_level] ?? subject.grade_level}
+              </option>
+            ))}
+          </select>
+          {errors.subjectId ? (
+            <p className="mt-1 text-sm text-rose-600">
+              {errors.subjectId.message}
             </p>
+          ) : null}
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            عنوان الدرس
+          </label>
+          <input
+            {...register("title")}
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            placeholder="مثال: مقدمة في المعادلات التربيعية"
+          />
+          {errors.title ? (
+            <p className="mt-1 text-sm text-rose-600">{errors.title.message}</p>
+          ) : null}
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            وصف الدرس (اختياري)
+          </label>
+          <textarea
+            {...register("description")}
+            rows={3}
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            رابط الفيديو
+          </label>
+          <div className="relative mt-2">
+            <Link2
+              size={18}
+              className="pointer-events-none absolute inset-y-0 right-4 my-auto text-slate-400"
+            />
+            <input
+              {...register("videoUrl")}
+              dir="ltr"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              placeholder="https://iframe.mediadelivery.net/embed/..."
+            />
           </div>
-        </aside>
-      </div>
+          {errors.videoUrl ? (
+            <p className="mt-1 text-sm text-rose-600">
+              {errors.videoUrl.message}
+            </p>
+          ) : null}
+        </div>
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSubmitting ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <UploadCloud size={18} />
+          )}
+          {isSubmitting ? "جارٍ الحفظ..." : "حفظ الفيديو"}
+        </button>
+      </form>
     </div>
   );
 }

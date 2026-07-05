@@ -1,87 +1,163 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
 import {
-  BookOpenText,
-  PlayCircle,
+  ArrowLeft,
   ClipboardList,
   FileText,
-  ArrowLeft,
+  Lock,
+  PlayCircle,
 } from "lucide-react";
+import { createClient } from "../../../../../utils/supabase/client";
+import { Skeleton } from "../../../../../components/ui/Skeleton";
+
+function isEmbedUrl(url) {
+  return (
+    typeof url === "string" &&
+    (url.includes("iframe") ||
+      url.includes("embed") ||
+      url.includes("youtube.com"))
+  );
+}
 
 export default function LessonPage({ params }) {
-  const { classId, lessonId } = params;
+  const resolvedParams = use(params);
+  const { classId: subjectId, lessonId: videoId } = resolvedParams;
+
+  const [video, setVideo] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!videoId) return;
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function load() {
+      setIsLoading(true);
+      setNotFound(false);
+
+      // RLS (has_active_subscription) means this simply returns no row if
+      // the student isn't subscribed to this subject, rather than an error.
+      const { data: videoRow, error: videoError } = await supabase
+        .from("videos")
+        .select("id, title, description, video_url, subject_id")
+        .eq("id", videoId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (videoError || !videoRow) {
+        setNotFound(true);
+        setIsLoading(false);
+        return;
+      }
+
+      setVideo(videoRow);
+
+      const { data: attachmentRows } = await supabase
+        .from("attachments")
+        .select("id, title, file_url")
+        .eq("video_id", videoId);
+
+      if (cancelled) return;
+
+      setAttachments(attachmentRows ?? []);
+      setIsLoading(false);
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [videoId]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <Skeleton className="h-32 w-full rounded-[32px]" />
+        <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+          <Skeleton className="h-96 w-full rounded-[32px]" />
+          <Skeleton className="h-64 w-full rounded-[32px]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+          <Lock size={24} />
+        </div>
+        <h2 className="mt-4 text-xl font-semibold text-slate-900">
+          هذا الدرس غير متاح
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
+          إما أن الدرس غير موجود، أو أنك لا تملك اشتراكًا فعّالًا في هذه المادة.
+        </p>
+        <Link
+          href={`/dashboard/classes/${subjectId}`}
+          className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+        >
+          العودة إلى المادة
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-          <div className="space-y-3">
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-blue-600">
-              درس مفصل
-            </p>
-            <h1 className="text-3xl font-semibold text-slate-900">
-              الدرس {lessonId} - الصف {classId}
-            </h1>
+        <div className="space-y-3">
+          <p className="text-sm font-medium uppercase tracking-[0.24em] text-blue-600">
+            درس
+          </p>
+          <h1 className="text-3xl font-semibold text-slate-900">
+            {video.title}
+          </h1>
+          {video.description ? (
             <p className="max-w-2xl text-sm leading-6 text-slate-600">
-              درس غني بالعناصر المرئية والملخصات السريعة. صممناه لمساعدتك على
-              التركيز والوصول إلى نتائج أفضل.
+              {video.description}
             </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-3xl bg-slate-50 p-5 text-center shadow-sm">
-              <p className="text-sm text-slate-500">المدة</p>
-              <p className="mt-3 text-2xl font-semibold text-slate-900">
-                28 دقيقة
-              </p>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-5 text-center shadow-sm">
-              <p className="text-sm text-slate-500">الموارد</p>
-              <p className="mt-3 text-2xl font-semibold text-slate-900">4</p>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-5 text-center shadow-sm">
-              <p className="text-sm text-slate-500">التقدم</p>
-              <p className="mt-3 text-2xl font-semibold text-blue-600">46%</p>
-            </div>
-          </div>
+          ) : null}
         </div>
       </div>
+
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
         <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-slate-500">عرض الدرس</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-                محتوى مرئي تفاعلي
+                محتوى مرئي
               </h2>
             </div>
-            <button className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
-              <PlayCircle size={18} />
-              تشغيل الدرس
-            </button>
+            <PlayCircle size={22} className="text-blue-600" />
           </div>
           <div className="mt-6 overflow-hidden rounded-[28px] bg-slate-950">
-            <div className="aspect-video bg-black" />
-          </div>
-          <div className="mt-6 space-y-4">
-            <div className="rounded-[28px] bg-slate-50 p-5">
-              <p className="text-sm font-semibold text-slate-900">ملخص الدرس</p>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                سنتعرف على تطبيقات التكامل في حل المسائل الهندسية وتمثيل النتائج
-                بطريقة مبسطة وسلسة.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {[
-                "الموضوع الأول: التكامل المحدود",
-                "الموضوع الثاني: قواعد الاشتقاق",
-                "الموضوع الثالث: أمثلة تطبيقية",
-                "الموضوع الرابع: مراجعة سريعة",
-              ].map((item) => (
-                <div key={item} className="rounded-3xl bg-slate-50 p-4">
-                  <p className="text-sm text-slate-700">{item}</p>
-                </div>
-              ))}
+            <div className="aspect-video bg-black">
+              {isEmbedUrl(video.video_url) ? (
+                <iframe
+                  className="h-full w-full"
+                  src={video.video_url}
+                  title={video.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  className="h-full w-full"
+                  src={video.video_url}
+                  controls
+                />
+              )}
             </div>
           </div>
         </div>
+
         <div className="space-y-6 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="rounded-[28px] bg-slate-50 p-5">
             <div className="flex items-center justify-between gap-3">
@@ -94,10 +170,17 @@ export default function LessonPage({ params }) {
               <FileText size={20} className="text-blue-600" />
             </div>
             <div className="mt-5 space-y-3">
-              {["ملخص الدرس PDF", "أسئلة تدريبية", "مذكرة مراجعة سريعة"].map(
-                (resource) => (
-                  <div
-                    key={resource}
+              {attachments.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  لا توجد مرفقات لهذا الدرس.
+                </p>
+              ) : (
+                attachments.map((attachment) => (
+                  <a
+                    key={attachment.id}
+                    href={attachment.file_url}
+                    target="_blank"
+                    rel="noreferrer"
                     className="flex items-center justify-between rounded-3xl bg-white p-4 shadow-sm"
                   >
                     <div className="flex items-center gap-3">
@@ -105,31 +188,25 @@ export default function LessonPage({ params }) {
                         <ClipboardList size={16} />
                       </div>
                       <p className="text-sm font-medium text-slate-900">
-                        {resource}
+                        {attachment.title}
                       </p>
                     </div>
-                    <button className="rounded-2xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700">
+                    <span className="rounded-2xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white">
                       تحميل
-                    </button>
-                  </div>
-                ),
+                    </span>
+                  </a>
+                ))
               )}
             </div>
           </div>
-          <div className="rounded-[28px] bg-slate-50 p-5">
-            <p className="text-sm font-medium text-slate-500">
-              الملاحظات السريعة
-            </p>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-              <li>استخدم الملخص قبل المراجعة النهائية.</li>
-              <li>راجع الأمثلة التدربية مرتين لتحسين الفهم.</li>
-              <li>اكمل الدرس التالي بعد إنهاء المادة الحالية.</li>
-            </ul>
-          </div>
-          <button className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-4 text-sm font-semibold text-white transition hover:bg-blue-700">
+
+          <Link
+            href={`/dashboard/classes/${subjectId}`}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-4 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
             <ArrowLeft size={18} />
-            الانتقال إلى الدرس التالي
-          </button>
+            العودة إلى المادة
+          </Link>
         </div>
       </div>
     </div>
