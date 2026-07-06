@@ -11,7 +11,9 @@
  */
 const SYNTHETIC_EMAIL_DOMAIN = "yourdomain.local";
 
-export function phoneToSyntheticEmail(phone) {
+export function phoneToSyntheticEmail(
+  phone: string | number | null | undefined,
+) {
   const digitsOnly = String(phone ?? "").replace(/\D/g, "");
   return `${digitsOnly}@${SYNTHETIC_EMAIL_DOMAIN}`;
 }
@@ -36,7 +38,11 @@ export const GRADE_UI_TO_ENUM = {
  * a substitute for creating the row transactionally in the first place
  * (see 16_handle_new_user_trigger.sql).
  */
-export async function fetchProfileWithRetry(supabase, userId, { attempts = 3, delayMs = 350 } = {}) {
+export async function fetchProfileWithRetry(
+  supabase,
+  userId,
+  { attempts = 3, delayMs = 350 } = {},
+) {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     const { data: profile, error } = await supabase
       .from("profiles")
