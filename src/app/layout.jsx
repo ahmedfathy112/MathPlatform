@@ -3,7 +3,7 @@ import "./globals.css";
 import ThemeToggle from "../app/components/ThemeToggle";
 import AuthListener from "../app/components/auth/AuthListener";
 import { ToastProvider } from "../app/components/ui/ToastProvider";
-
+import { Analytics } from "@vercel/analytics/next";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -43,6 +43,7 @@ export default function RootLayout({ children }) {
         <ToastProvider>
           <AuthListener />
           {children}
+          <Analytics />
           <ThemeToggle />
         </ToastProvider>
       </body>
