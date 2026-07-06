@@ -9,6 +9,7 @@
  * before going to production (it just needs to be a domain you control /
  * that will never receive real mail, since Supabase never sends email here).
  */
+import { SupabaseClient } from "@supabase/supabase-js";
 const SYNTHETIC_EMAIL_DOMAIN = "yourdomain.local";
 
 export function phoneToSyntheticEmail(
@@ -39,9 +40,9 @@ export const GRADE_UI_TO_ENUM = {
  * (see 16_handle_new_user_trigger.sql).
  */
 export async function fetchProfileWithRetry(
-  supabase,
-  userId,
-  { attempts = 3, delayMs = 350 } = {},
+  supabase: SupabaseClient,
+  userId: string,
+  { attempts = 3, delayMs = 350 }: { attempts?: number; delayMs?: number } = {},
 ) {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     const { data: profile, error } = await supabase
