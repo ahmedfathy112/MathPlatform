@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "src/app/store/usePlatformStore.js", "src/app/store/useAuthStore.js", "src/app/utils/supabase/auth-helpers.js", "src/app/utils/supabase/middleware.js", "src/app/utils/supabase/server.js"  ],
+, "src/app/store/usePlatformStore.js", "src/app/store/useAuthStore.js", "src/app/utils/supabase/auth-helpers.ts", "src/app/utils/supabase/middleware.ts", "src/app/utils/supabase/server.ts"  ],
   "exclude": ["node_modules"]
 }
