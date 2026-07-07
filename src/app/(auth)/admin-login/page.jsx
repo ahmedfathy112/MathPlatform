@@ -1,18 +1,16 @@
 ﻿"use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff, Loader2, LockKeyhole, UserRound } from "lucide-react";
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+import { createClient } from "../../utils/supabase/client";
+import { useToast } from "../../components/ui/ToastProvider";
 
 const adminLoginSchema = z.object({
-  identifier: z
-    .string()
-    .trim()
-    .min(3, "يرجى إدخال اسم المستخدم أو البريد الإلكتروني"),
+  identifier: z.string().trim().min(3, "يرجى إدخال البريد الإلكتروني"),
   password: z.string().min(6, "كلمة المرور يجب ألا تقل عن 6 أحرف"),
 });
 
@@ -125,7 +123,10 @@ function PasswordField({
 }
 
 export default function AdminLoginPage() {
+  const router = useRouter();
+  const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -139,8 +140,58 @@ export default function AdminLoginPage() {
     },
   });
 
-  const onSubmit = async () => {
-    await sleep(900);
+  const onSubmit = async (data) => {
+    const supabase = createClient();
+
+    const { data: authData, error: authError } =
+      await supabase.auth.signInWithPassword({
+        email: data.identifier,
+        password: data.password,
+      });
+
+    if (authError) {
+      showToast({
+        type: "error",
+        message: "بيانات الدخول غير صحيحة، يرجى التأكد من البريد وكلمة المرور.",
+      });
+      return;
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (profileError || !profileData) {
+      showToast({
+        type: "error",
+        message: "حدث خطأ أثناء التحقق من الصلاحيات.",
+      });
+      await supabase.auth.signOut();
+      return;
+    }
+
+    if (profileData.role === "student") {
+      await supabase.auth.signOut();
+      showToast({
+        type: "error",
+        message: "عفواً! هذه البوابة مخصصة لطاقم الإدارة فقط.",
+      });
+      return;
+    }
+
+    // 4. توجيه المستخدم حسب صلاحياته
+    showToast({
+      type: "success",
+      message: "تم تسجيل الدخول بنجاح، جاري التوجيه...",
+    });
+
+    if (profileData.role === "teacher") {
+      router.push("/admin");
+    } else if (profileData.role === "assistant") {
+      router.push("/assistant");
+    }
   };
 
   return (
@@ -169,11 +220,12 @@ export default function AdminLoginPage() {
           >
             <TextField
               id="admin-identifier"
-              label="اسم المستخدم أو البريد"
+              label="البريد الإلكتروني"
               icon={UserRound}
               error={errors.identifier}
-              placeholder="أدخل اسم المستخدم أو البريد الإلكتروني"
+              placeholder="أدخل البريد الإلكتروني"
               autoComplete="username"
+              type="email"
               registerProps={register("identifier")}
             />
 
