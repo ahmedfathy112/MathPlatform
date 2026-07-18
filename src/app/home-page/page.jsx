@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -21,6 +22,8 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import { createClient } from "../utils/supabase/client";
+import { Skeleton } from "../components/ui/Skeleton";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 28 },
@@ -71,33 +74,94 @@ const features = [
   },
 ];
 
-const courses = [
-  {
-    title: "الجبر والهندسة الفراغية",
-    subtitle: "الصف الثالث الثانوي",
-    description:
-      "مسار متكامل يربط الفهم العميق بالقواعد الأساسية والمهارات عالية الدقة.",
-    icon: Calculator,
-    tone: "from-blue-600 via-indigo-600 to-slate-900",
-  },
-  {
-    title: "الرياضيات البحتة",
-    subtitle: "الصف الثاني الثانوي",
-    description:
-      "تأسيس قوي في الأفكار المجردة مع تدريب موجه على الاستنتاج الصحيح.",
-    icon: Sigma,
-    tone: "from-sky-600 via-blue-600 to-indigo-700",
-  },
-  {
-    title: "التفاضل والتكامل",
-    subtitle: "الصف الثالث الثانوي",
-    description:
-      "فهم تدريجي للمفاهيم المعقدة مع أمثلة عملية تختصر الوقت والمجهود.",
-    icon: GraduationCap,
-    tone: "from-indigo-600 via-slate-800 to-slate-950",
-  },
+const GRADE_MAP = {
+  secondary_3: "الصف الثالث الثانوي",
+  secondary_2: "الصف الثاني الثانوي",
+  secondary_1: "الصف الأول الثانوي",
+  prep_3: "الصف الثالث الإعدادي",
+  prep_2: "الصف الثاني الإعدادي",
+  prep_1: "الصف الأول الإعدادي",
+};
+
+const ICONS = [Calculator, Sigma, GraduationCap, BookOpen];
+const TONES = [
+  "from-blue-600 via-indigo-600 to-slate-900",
+  "from-sky-600 via-blue-600 to-indigo-700",
+  "from-indigo-600 via-slate-800 to-slate-950",
 ];
 
+export function CoursesSection() {
+  const [courses, setCourses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase
+      .from("subjects")
+      .select("name, grade_level, description")
+      .eq("is_active", true)
+      .order("name")
+      .then(({ data, error }) => {
+        if (!error && data) {
+          const mapped = data.map((item, index) => ({
+            title: item.name,
+            subtitle: GRADE_MAP[item.grade_level] || item.grade_level,
+            description: item.description,
+            icon: ICONS[index % ICONS.length],
+            tone: TONES[index % TONES.length],
+          }));
+          setCourses(mapped);
+        }
+        setIsLoading(false);
+      });
+  }, []);
+
+  return (
+    <div className="mt-10 w-full">
+      {isLoading ? (
+        <div className="w-full flex flex-row justify-center gap-6">
+          <Skeleton className="h-48 w-full rounded-3xl" />
+          <Skeleton className="h-48 w-full rounded-3xl" />
+          <Skeleton className="h-48 w-full rounded-3xl" />
+        </div>
+      ) : courses.length === 0 ? (
+        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <p className="text-slate-600 dark:text-slate-400">
+            لا توجد مواد متاحة حالياً.
+          </p>
+        </div>
+      ) : (
+        <div className="flex w-full justify-center gap-6 max-md:flex-col">
+          {courses?.map((course, idx) => {
+            const IconComponent = course.icon;
+            return (
+              <div
+                key={idx}
+                className={`bg-gradient-to-br ${course.tone} w-full rounded-3xl p-6 border border-white/5`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm text-slate-300 font-medium">
+                    {course.subtitle}
+                  </span>
+                  <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm">
+                    <IconComponent className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  {course.title}
+                </h3>
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  {course.description}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 const steps = [
   {
     number: "01",
@@ -746,11 +810,9 @@ function LandingPage() {
         />
         <motion.div
           variants={staggerVariants}
-          className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+          className="mt-10 w-full "
         >
-          {courses.map((course) => (
-            <CourseCard key={course.title} course={course} />
-          ))}
+          <CoursesSection />
         </motion.div>
       </motion.section>
 
@@ -913,7 +975,7 @@ function LandingPage() {
       </footer>
 
       <a
-        href="https://wa.me/201000000000"
+        href="https://wa.me/01060733679"
         target="_blank"
         rel="noreferrer"
         aria-label="التواصل عبر واتساب"

@@ -38,7 +38,7 @@ function PendingApprovalsSection() {
     const { data, error } = await supabase
       .from("payment_requests")
       .select(
-        "id, amount_claimed, whatsapp_reference, receipt_image_path, created_at, student:student_id(id, full_name, phone), subject:subject_id(name)",
+        "id, amount_claimed, whatsapp_reference, created_at, student:student_id(id, full_name, phone), subject:subject_id(id, name)",
       )
       .eq("status", "pending")
       .order("created_at", { ascending: true });
@@ -49,22 +49,7 @@ function PendingApprovalsSection() {
       return;
     }
 
-    const withThumbnails = await Promise.all(
-      (data ?? []).map(async (request) => {
-        if (!request.receipt_image_path) {
-          return { ...request, receiptSignedUrl: null };
-        }
-        const { data: signedUrlData } = await supabase.storage
-          .from("payment-receipts")
-          .createSignedUrl(request.receipt_image_path, 3600);
-        return {
-          ...request,
-          receiptSignedUrl: signedUrlData?.signedUrl ?? null,
-        };
-      }),
-    );
-
-    setRequests(withThumbnails);
+    setRequests(data ?? []);
     setIsLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

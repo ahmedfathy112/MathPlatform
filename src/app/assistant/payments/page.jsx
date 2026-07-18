@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Image as ImageIcon, Search } from "lucide-react";
 import { createClient } from "../../utils/supabase/client";
@@ -36,31 +36,69 @@ export default function AssistantPaymentsPage() {
   const [search, setSearch] = useState("");
   const [lightboxSrc, setLightboxSrc] = useState(null);
 
-  const loadRequests = useCallback(async () => {
-    setIsLoading(true);
+  useEffect(() => {
+    let ignore = false;
     const supabase = createClient();
 
-    const { data, error } = await supabase
-      .from("payment_requests")
-      .select(
-        "id, status, amount_claimed, whatsapp_reference, receipt_image_path, created_at, reviewed_at, student:student_id(full_name, phone), subject:subject_id(name)",
-      )
-      .order("created_at", { ascending: false });
+    async function loadRequests() {
+      const { data: paymentRows, error } = await supabase
+        .from("payment_requests")
+        .select(
+          "id, status, amount_claimed, whatsapp_reference, receipt_image_path, created_at, reviewed_at, student_id, subject_id",
+        )
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      showToast({ type: "error", message: "تعذر تحميل سجل المدفوعات." });
+      if (ignore) return;
+
+      if (error) {
+        showToast({ type: "error", message: "تعذر تحميل سجل المدفوعات." });
+        setIsLoading(false);
+        return;
+      }
+
+      const rows = paymentRows ?? [];
+      const studentIds = [...new Set(rows.map((row) => row.student_id))];
+      const subjectIds = [...new Set(rows.map((row) => row.subject_id))];
+
+      const [{ data: studentRows }, { data: subjectRows }] = await Promise.all([
+        studentIds.length
+          ? supabase
+              .from("profiles")
+              .select("id, full_name, phone")
+              .in("id", studentIds)
+          : Promise.resolve({ data: [] }),
+        subjectIds.length
+          ? supabase.from("subjects").select("id, name").in("id", subjectIds)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      if (ignore) return;
+
+      const studentById = new Map((studentRows ?? []).map((s) => [s.id, s]));
+      const subjectById = new Map((subjectRows ?? []).map((s) => [s.id, s]));
+
+      setRequests(
+        rows.map((row) => ({
+          ...row,
+          student: studentById.get(row.student_id) ?? null,
+          subject: subjectById.get(row.subject_id) ?? null,
+        })),
+      );
       setIsLoading(false);
-      return;
     }
 
-    setRequests(data ?? []);
-    setIsLoading(false);
+    // No setIsLoading(true) here on purpose — `isLoading` already starts
+    // `true` from useState above, so setting it again synchronously as the
+    // effect fires is exactly the "setState synchronously within an effect"
+    // pattern React was warning about. setIsLoading(false) below still
+    // happens, but only after the `await`, i.e. asynchronously — that's fine.
+    loadRequests();
+
+    return () => {
+      ignore = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    loadRequests();
-  }, [loadRequests]);
 
   async function handleViewReceipt(path) {
     if (!path) return;
