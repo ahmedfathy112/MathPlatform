@@ -17,6 +17,7 @@ function isEmbedUrl(url) {
     typeof url === "string" &&
     (url.includes("iframe") ||
       url.includes("embed") ||
+      url.includes("mediadelivery.net") ||
       url.includes("youtube.com"))
   );
 }
@@ -39,8 +40,6 @@ export default function LessonPage({ params }) {
       setIsLoading(true);
       setNotFound(false);
 
-      // RLS (has_active_subscription) means this simply returns no row if
-      // the student isn't subscribed to this subject, rather than an error.
       const { data: videoRow, error: videoError } = await supabase
         .from("videos")
         .select("id, title, description, video_url, subject_id")
