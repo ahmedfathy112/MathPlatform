@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Bell, CalendarDays, Sparkles } from "lucide-react";
 import { createClient } from "../utils/supabase/client";
 import { useAuthStore, selectProfile } from "../store/useAuthStore";
-import { fetchSubjectsWithSubscriptions } from "../utils/supabase/queries";
+import { fetchPackagesWithSubscriptions } from "../utils/supabase/queries";
 import { useToast } from "../components/ui/ToastProvider";
 import { Skeleton } from "../components/ui/Skeleton";
 import PackageCard from "../components/PackageCard";
@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const profile = useAuthStore(selectProfile);
   const { showToast } = useToast();
 
-  const [mySubjects, setMySubjects] = useState([]); // subjects with any subscription history
+  const [myPackages, setMyPackages] = useState([]); // packages with any subscription history
   const [upcomingExamCount, setUpcomingExamCount] = useState(0);
   const [latestVideo, setLatestVideo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +28,7 @@ export default function DashboardPage() {
     async function load() {
       setIsLoading(true);
 
-      const { subjects, error } = await fetchSubjectsWithSubscriptions(
+      const { packages, error } = await fetchPackagesWithSubscriptions(
         supabase,
         profile,
       );
@@ -41,14 +41,36 @@ export default function DashboardPage() {
         return;
       }
 
-      const subscribedSubjects = subjects.filter((s) => s.status !== null);
-      const activeSubjectIds = subjects
-        .filter((s) => s.status === "active")
-        .map((s) => s.id);
+      const subscribedPackages = packages.filter((p) => p.status !== null);
+      const activePackageIds = packages
+        .filter((p) => p.status === "active")
+        .map((p) => p.id);
 
-      setMySubjects(subscribedSubjects);
+      setMyPackages(subscribedPackages);
 
-      if (activeSubjectIds.length === 0) {
+      if (activePackageIds.length === 0) {
+        setUpcomingExamCount(0);
+        setLatestVideo(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Exams/videos are still scoped to subjects, so unlocked packages
+      // need one extra hop: find every subject inside an active package,
+      // then query content for those subjects.
+      const { data: subjectRows } = await supabase
+        .from("subjects")
+        .select("id, package_id")
+        .in("package_id", activePackageIds);
+
+      if (cancelled) return;
+
+      const subjectIds = (subjectRows ?? []).map((s) => s.id);
+      const packageIdBySubjectId = new Map(
+        (subjectRows ?? []).map((s) => [s.id, s.package_id]),
+      );
+
+      if (subjectIds.length === 0) {
         setUpcomingExamCount(0);
         setLatestVideo(null);
         setIsLoading(false);
@@ -59,12 +81,12 @@ export default function DashboardPage() {
         supabase
           .from("exams")
           .select("id", { count: "exact", head: true })
-          .in("subject_id", activeSubjectIds)
+          .in("subject_id", subjectIds)
           .gt("end_time", new Date().toISOString()),
         supabase
           .from("videos")
           .select("id, title, description, video_url, subject_id")
-          .in("subject_id", activeSubjectIds)
+          .in("subject_id", subjectIds)
           .order("created_at", { ascending: false })
           .limit(1),
       ]);
@@ -72,7 +94,10 @@ export default function DashboardPage() {
       if (cancelled) return;
 
       setUpcomingExamCount(examCount ?? 0);
-      setLatestVideo(videoRows?.[0] ?? null);
+      const video = videoRows?.[0] ?? null;
+      setLatestVideo(
+        video ? { ...video, packageId: packageIdBySubjectId.get(video.subject_id) } : null,
+      );
       setIsLoading(false);
     }
 
@@ -83,7 +108,7 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, profile?.grade_level]);
 
-  const activeCount = mySubjects.filter((s) => s.status === "active").length;
+  const activeCount = myPackages.filter((p) => p.status === "active").length;
 
   return (
     <div className="space-y-8">
@@ -99,12 +124,12 @@ export default function DashboardPage() {
                 مرحبا {profile?.full_name ?? ""}، لنواصل التعلّم اليوم
               </h1>
               <p className="max-w-xl text-sm text-slate-200 sm:text-base">
-                استمتع بمحتوى تعليمي ثري ومتابعة مستمرة لتقدمك في كل مادة.
+                استمتع بمحتوى تعليمي ثري ومتابعة مستمرة لتقدمك في كل باقة.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-3xl bg-white/10 p-4 text-sm sm:p-5">
-                <p className="text-sm text-slate-200">المواد المشترك بها</p>
+                <p className="text-sm text-slate-200">الباقات المشترك بها</p>
                 <p className="mt-2 text-2xl font-semibold">
                   {isLoading ? "..." : activeCount}
                 </p>
@@ -134,13 +159,13 @@ export default function DashboardPage() {
             <div className="mt-8 grid gap-4">
               <div className="rounded-3xl bg-white/10 p-5 text-slate-100">
                 <p className="text-xs uppercase tracking-[0.25em] text-slate-200">
-                  إجمالي المواد
+                  إجمالي الباقات
                 </p>
                 <p className="mt-3 text-2xl font-semibold">
-                  {isLoading ? "..." : mySubjects.length}
+                  {isLoading ? "..." : myPackages.length}
                 </p>
                 <p className="mt-1 text-xs text-slate-300">
-                  عدد المواد التي اشتركت بها من قبل
+                  عدد الباقات التي اشتركت بها من قبل
                 </p>
               </div>
             </div>
@@ -167,9 +192,7 @@ export default function DashboardPage() {
           {isLoading ? (
             <Skeleton className="h-56 w-full rounded-[28px]" />
           ) : latestVideo ? (
-            <Link
-              href={`/dashboard/classes/${latestVideo.subject_id}/lessons/${latestVideo.id}`}
-            >
+            <Link href={`/dashboard/classes/${latestVideo.packageId}`}>
               <VideoLessonCard
                 title={latestVideo.title}
                 description={latestVideo.description}
@@ -178,7 +201,7 @@ export default function DashboardPage() {
             </Link>
           ) : (
             <p className="rounded-3xl bg-slate-50 p-6 text-center text-sm text-slate-600">
-              لا توجد دروس متاحة بعد. اشترك في مادة لتبدأ المشاهدة.
+              لا توجد دروس متاحة بعد. اشترك في باقة لتبدأ المشاهدة.
             </p>
           )}
         </div>
@@ -214,7 +237,7 @@ export default function DashboardPage() {
           <div>
             <p className="text-sm font-medium text-slate-500">باقاتي الحالية</p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-              تابع الحزم التي تعمل عليها
+              تابع الباقات التي تعمل عليها
             </h2>
           </div>
           <Link
@@ -231,25 +254,25 @@ export default function DashboardPage() {
               <Skeleton key={index} className="h-56 w-full rounded-3xl" />
             ))}
           </div>
-        ) : mySubjects.length === 0 ? (
+        ) : myPackages.length === 0 ? (
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center">
-            <p className="text-sm text-slate-600">لم تشترك في أي مادة بعد.</p>
+            <p className="text-sm text-slate-600">لم تشترك في أي باقة بعد.</p>
             <Link
               href="/dashboard/subscriptions"
               className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
-              تصفح المواد المتاحة
+              تصفح الباقات المتاحة
             </Link>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {mySubjects.map((subject) => (
+            {myPackages.map((pkg) => (
               <PackageCard
-                key={subject.id}
-                subjectId={subject.id}
-                title={subject.name}
-                description={subject.description}
-                status={subject.status}
+                key={pkg.id}
+                packageId={pkg.id}
+                title={pkg.name}
+                description={pkg.description}
+                status={pkg.status}
               />
             ))}
           </div>

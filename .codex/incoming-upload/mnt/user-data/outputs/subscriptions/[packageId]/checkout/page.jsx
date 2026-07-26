@@ -5,7 +5,14 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CheckCircle2, Copy, Loader2, Smartphone, Wallet } from "lucide-react";
+import {
+  CheckCircle2,
+  Copy,
+  ImagePlus,
+  Loader2,
+  Smartphone,
+  Wallet,
+} from "lucide-react";
 import { createClient } from "../../../../utils/supabase/client";
 import { useAuthStore, selectProfile } from "../../../../store/useAuthStore";
 import { getEffectiveStatus } from "../../../../utils/supabase/queries";
@@ -39,6 +46,9 @@ export default function CheckoutPage({ params }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState(null);
+  const [receiptError, setReceiptError] = useState(null);
 
   const {
     register,
@@ -108,14 +118,47 @@ export default function CheckoutPage({ params }) {
     }
   }
 
+  function handleReceiptSelect(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setReceiptError("يرجى اختيار ملف صورة فقط.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setReceiptError("حجم الصورة يجب ألا يتجاوز 5 ميجابايت.");
+      return;
+    }
+    setReceiptError(null);
+    setReceiptFile(file);
+    setReceiptPreviewUrl(URL.createObjectURL(file));
+  }
+
   const onSubmit = async ({ amountClaimed, whatsappReference }) => {
+    if (!receiptFile) {
+      setReceiptError("يرجى إرفاق صورة إيصال الدفع.");
+      return;
+    }
+
     const supabase = createClient();
+
+    const fileExt = receiptFile.name.split(".").pop();
+    const storagePath = `${profile.id}/${crypto.randomUUID()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("payment-receipts")
+      .upload(storagePath, receiptFile);
+
+    if (uploadError) {
+      showToast({ type: "error", message: "تعذر رفع صورة الإيصال. حاول مرة أخرى." });
+      return;
+    }
 
     const { error } = await supabase.from("payment_requests").insert({
       student_id: profile.id,
       package_id: packageId,
       amount_claimed: Number(amountClaimed),
       whatsapp_reference: whatsappReference,
+      receipt_image_path: storagePath,
     });
 
     if (error) {
@@ -225,7 +268,8 @@ export default function CheckoutPage({ params }) {
 
         <ol className="mt-6 list-inside list-decimal space-y-2 text-sm leading-7 text-slate-600">
           <li>حوّل قيمة الاشتراك إلى رقم فودافون كاش أعلاه.</li>
-          <li>أدخل المبلغ ورقم العملية أدناه ثم أرسل الطلب.</li>
+          <li>التقط لقطة شاشة لإيصال العملية.</li>
+          <li>ارفع الصورة وأدخل المبلغ ورقم العملية أدناه ثم أرسل الطلب.</li>
         </ol>
 
         <form
@@ -280,6 +324,48 @@ export default function CheckoutPage({ params }) {
               <p className="text-sm font-medium text-rose-600">
                 {errors.whatsappReference.message}
               </p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">
+              صورة إيصال الدفع
+            </label>
+            <input
+              id="receipt-file"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => handleReceiptSelect(event.target.files?.[0])}
+            />
+            {receiptPreviewUrl ? (
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={receiptPreviewUrl}
+                  alt="معاينة إيصال الدفع"
+                  className="max-h-72 w-full rounded-2xl border border-slate-200 object-contain"
+                />
+                <label
+                  htmlFor="receipt-file"
+                  className="absolute bottom-3 left-3 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/90 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur hover:bg-white"
+                >
+                  <ImagePlus size={14} /> تغيير الصورة
+                </label>
+              </div>
+            ) : (
+              <label
+                htmlFor="receipt-file"
+                className={`flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-10 text-slate-500 transition hover:border-sky-400 hover:text-sky-600 ${
+                  receiptError ? "border-rose-400" : "border-slate-300 bg-slate-50"
+                }`}
+              >
+                <ImagePlus size={28} />
+                <span className="text-sm font-medium">ارفع صورة الإيصال</span>
+              </label>
+            )}
+            {receiptError ? (
+              <p className="text-sm font-medium text-rose-600">{receiptError}</p>
             ) : null}
           </div>
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Trash2, Users, TrendingUp, Clock } from "lucide-react";
+import { Plus, Trash2, Users, TrendingUp, Clock, X, Award } from "lucide-react";
 import { createClient } from "../../utils/supabase/client";
 import { useToast } from "../../components/ui/ToastProvider";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -12,6 +12,11 @@ export default function ExamsPage() {
   const { showToast } = useToast();
   const [exams, setExams] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // حالات خاصة بالنافذة المنبثقة (Modal) لعرض الطلاب
+  const [selectedExam, setSelectedExam] = useState(null);
+  const [examAttempts, setExamAttempts] = useState([]);
+  const [isLoadingAttempts, setIsLoadingAttempts] = useState(false);
 
   const loadExams = useCallback(async () => {
     setIsLoading(true);
@@ -63,7 +68,63 @@ export default function ExamsPage() {
     loadExams();
   }, [loadExams]);
 
-  async function handleDelete(examId) {
+  // دالة جلب تفاصيل ومحاولات الطلاب لاختبار معين بشكل منفصل لتجنب أخطاء الـ Joins
+  async function handleOpenExamDetails(exam) {
+    setSelectedExam(exam);
+    setIsLoadingAttempts(true);
+    const supabase = createClient();
+
+    // 1. جلب محاولات الامتحان الخاصة بهذا الاختبار فقط
+    const { data: attemptsData, error: attemptsError } = await supabase
+      .from("exam_attempts")
+      .select("id, student_id, score, status, submitted_at")
+      .eq("exam_id", exam.id)
+      .in("status", ["submitted", "auto_submitted"])
+      .order("score", { ascending: false });
+
+    if (attemptsError) {
+      showToast({
+        type: "error",
+        message: "تعذر تحميل نتائج الطلاب لهذا الاختبار.",
+      });
+      setExamAttempts([]);
+      setIsLoadingAttempts(false);
+      return;
+    }
+
+    if (!attemptsData || attemptsData.length === 0) {
+      setExamAttempts([]);
+      setIsLoadingAttempts(false);
+      return;
+    }
+
+    // 2. استخراج معرفات الطلاب الفريدة لجلب بياناتهم دفعة واحدة
+    const studentIds = [...new Set(attemptsData.map((a) => a.student_id))];
+
+    // 3. جلب بيانات الطلاب من جدول الـ profiles
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, full_name, phone")
+      .in("id", studentIds);
+
+    if (profilesError) {
+      setExamAttempts(attemptsData.map((a) => ({ ...a, student: null })));
+      setIsLoadingAttempts(false);
+      return;
+    }
+
+    const profilesMap = new Map((profilesData ?? []).map((p) => [p.id, p]));
+    const combined = attemptsData.map((attempt) => ({
+      ...attempt,
+      student: profilesMap.get(attempt.student_id) || null,
+    }));
+
+    setExamAttempts(combined);
+    setIsLoadingAttempts(false);
+  }
+
+  async function handleDelete(e, examId) {
+    e.stopPropagation();
     if (
       !window.confirm(
         "هل تريد حذف هذا الاختبار وكل أسئلته ومحاولات الطلاب فيه؟",
@@ -80,7 +141,7 @@ export default function ExamsPage() {
       return;
     }
 
-    setExams((prev) => prev.filter((e) => e.id !== examId));
+    setExams((prev) => prev.filter((ex) => ex.id !== examId));
     showToast({ type: "success", message: "تم حذف الاختبار." });
   }
 
@@ -113,7 +174,8 @@ export default function ExamsPage() {
             إدارة الاختبارات
           </h1>
           <p className="mt-1 text-slate-600 dark:text-slate-400">
-            إنشاء ومتابعة الاختبارات ونتائج الطلاب
+            إنشاء ومتابعة الاختبارات ونتائج الطلاب (اضغط على أي اختبار لعرض
+            تفاصيل الطلاب)
           </p>
         </div>
         <Link
@@ -140,7 +202,8 @@ export default function ExamsPage() {
             return (
               <div
                 key={exam.id}
-                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+                onClick={() => handleOpenExamDetails(exam)}
+                className="cursor-pointer rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-blue-400 hover:shadow-md dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-500"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
@@ -159,7 +222,7 @@ export default function ExamsPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => handleDelete(exam.id)}
+                    onClick={(e) => handleDelete(e, exam.id)}
                     className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <Trash2 size={18} />
@@ -188,6 +251,91 @@ export default function ExamsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* النافذة المنبثقة (Modal) لعرض الطلاب الذين أنهوا الاختبار */}
+      {selectedExam && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-800">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                  نتائج اختبار: {selectedExam.title}
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  الطلاب الذين أتموا تسليم الاختبار بنجاح
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedExam(null)}
+                className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mt-6">
+              {isLoadingAttempts ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-16 w-full rounded-xl" />
+                  <Skeleton className="h-16 w-full rounded-xl" />
+                  <Skeleton className="h-16 w-full rounded-xl" />
+                </div>
+              ) : examAttempts.length === 0 ? (
+                <div className="py-12 text-center">
+                  <Users className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
+                  <p className="mt-3 text-slate-500 dark:text-slate-400">
+                    لم يقم أي طالب بتسليم هذا الاختبار حتى الآن.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                  {examAttempts.map((attempt) => (
+                    <div
+                      key={attempt.id}
+                      className="flex items-center justify-between py-4 first:pt-0 last:pb-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600 font-bold dark:bg-blue-900/30 dark:text-blue-400">
+                          {attempt.student?.full_name?.charAt(0) || "ط"}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900 dark:text-white">
+                            {attempt.student?.full_name || "طالب بدون اسم"}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {attempt.student?.phone || "—"} • تسليم في:{" "}
+                            {attempt.submitted_at
+                              ? formatDateTime(attempt.submitted_at)
+                              : "—"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-2 dark:bg-slate-700/50">
+                        <Award
+                          size={18}
+                          className="text-blue-600 dark:text-blue-400"
+                        />
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {attempt.score ?? 0}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 border-t border-slate-100 pt-4 text-left dark:border-slate-700">
+              <button
+                onClick={() => setSelectedExam(null)}
+                className="rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

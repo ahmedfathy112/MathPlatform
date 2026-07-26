@@ -43,10 +43,22 @@ export default function CreateExamForm({ redirectTo = "/admin/exams" }) {
 
     async function load() {
       setIsLoadingSubjects(true);
-      const { data, error } = await supabase
+
+      // محاولة جلب المواد بالأعمدة الكاملة
+      let { data, error } = await supabase
         .from("subjects")
         .select("id, name, grade_level")
         .order("name");
+
+      // محاولة احتياطية في حال فشل الاستعلام الأساسي لتجاوز مشاكل الأعمدة أو الصلاحيات
+      if (error || !data) {
+        const fallback = await supabase
+          .from("subjects")
+          .select("id, name")
+          .order("name");
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (cancelled) return;
 
@@ -149,6 +161,10 @@ export default function CreateExamForm({ redirectTo = "/admin/exams" }) {
     setIsSaving(true);
     const supabase = createClient();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { data: exam, error: examError } = await supabase
       .from("exams")
       .insert({
@@ -158,7 +174,7 @@ export default function CreateExamForm({ redirectTo = "/admin/exams" }) {
         start_time: new Date(examForm.startTime).toISOString(),
         end_time: new Date(examForm.endTime).toISOString(),
         duration_minutes: Number(examForm.durationMinutes),
-        created_by: process.env.NEXT_PUBLIC_SUPABASE_TEACHER,
+        created_by: user?.id || process.env.NEXT_PUBLIC_SUPABASE_TEACHER,
       })
       .select("id")
       .single();
@@ -249,8 +265,10 @@ export default function CreateExamForm({ redirectTo = "/admin/exams" }) {
             </option>
             {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>
-                {subject.name} —{" "}
-                {GRADE_LABELS[subject.grade_level] ?? subject.grade_level}
+                {subject.name}
+                {subject.grade_level
+                  ? ` — ${GRADE_LABELS[subject.grade_level] ?? subject.grade_level}`
+                  : ""}
               </option>
             ))}
           </select>

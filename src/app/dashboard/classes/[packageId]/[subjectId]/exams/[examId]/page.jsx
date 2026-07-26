@@ -9,10 +9,14 @@ import {
   Lock,
   ShieldCheck,
 } from "lucide-react";
-import { createClient } from "../../../../../utils/supabase/client";
-import { useAuthStore, selectUser } from "../../../../../store/useAuthStore";
-import { useToast } from "../../../../../components/ui/ToastProvider";
-import { Skeleton } from "../../../../../components/ui/Skeleton";
+import { createClient } from "../../../../../../utils/supabase/client";
+// تم التعديل هنا لاستيراد selectProfile بدلاً من selectUser
+import {
+  useAuthStore,
+  selectProfile,
+} from "../../../../../../store/useAuthStore";
+import { useToast } from "../../../../../../components/ui/ToastProvider";
+import { Skeleton } from "../../../../../../components/ui/Skeleton";
 
 const OPTION_KEYS = ["A", "B", "C", "D"];
 
@@ -94,10 +98,11 @@ function ResultState({ result, examTitle, backHref }) {
 
 export default function ExamPage({ params }) {
   const resolvedParams = use(params);
-  const { classId: subjectId, examId } = resolvedParams;
-  const user = useAuthStore(selectUser);
+  const { packageId, subjectId, examId } = resolvedParams;
+  // تم التعديل هنا لاستخدام profile بدلاً من user
+  const profile = useAuthStore(selectProfile);
   const { showToast } = useToast();
-  const backHref = `/dashboard/classes/${subjectId}`;
+  const backHref = `/dashboard/classes/${packageId}/${subjectId}`;
 
   const [phase, setPhase] = useState("loading"); // loading | not_found | not_open_yet | closed | ready | in_progress | submitted
   const [exam, setExam] = useState(null);
@@ -113,7 +118,8 @@ export default function ExamPage({ params }) {
   const hasFinalizedRef = useRef(false);
 
   const loadExamAndAttempt = useCallback(async () => {
-    if (!user?.id || !examId) return;
+    // تم التعديل هنا للتحقق من profile.id
+    if (!profile?.id || !examId) return;
 
     const { data: examRow, error: examError } = await supabase
       .from("exams")
@@ -134,7 +140,8 @@ export default function ExamPage({ params }) {
     const { data: attemptRow } = await supabase
       .from("exam_attempts")
       .select("id, status, started_at, submitted_at, score")
-      .eq("student_id", user.id)
+      // تم التعديل هنا لاستخدام profile.id
+      .eq("student_id", profile.id)
       .eq("exam_id", examId)
       .maybeSingle();
 
@@ -154,7 +161,6 @@ export default function ExamPage({ params }) {
 
     if (attemptRow?.status === "in_progress") {
       setAttempt(attemptRow);
-      // Resume: figure out the real deadline and load questions immediately.
       const attemptDeadline = new Date(
         new Date(attemptRow.started_at).getTime() +
           examRow.duration_minutes * 60 * 1000,
@@ -176,25 +182,17 @@ export default function ExamPage({ params }) {
     }
 
     setPhase("ready");
-  }, [user?.id, examId, supabase]);
+  }, [profile?.id, examId, supabase]);
 
   useEffect(() => {
     loadExamAndAttempt();
   }, [loadExamAndAttempt]);
 
-  // Load questions + any previously saved answers once we're in progress.
   useEffect(() => {
     if (phase !== "in_progress" || !attempt?.id) return;
     let cancelled = false;
 
     async function loadQuestions() {
-      // Query the student-safe view — it never exposes correct_option, and
-      // RLS on the underlying table only allows rows while this attempt is
-      // in_progress and the exam window is open. `image_url` here is a
-      // private Storage path (e.g. "examId/uuid.png"), not a public URL, so
-      // we resolve each one into a short-lived signed URL — RLS on
-      // storage.objects is what actually gates who's allowed to generate
-      // that signed URL in the first place.
       const { data: questionRows } = await supabase
         .from("questions_for_students")
         .select("id, image_url, options, order_index")
@@ -259,7 +257,6 @@ export default function ExamPage({ params }) {
     setPhase("submitted");
   }, [attempt?.id, supabase, showToast]);
 
-  // Countdown ticking + auto-submit when time runs out.
   useEffect(() => {
     if (phase !== "in_progress" || !deadlineRef.current) return;
 
@@ -279,7 +276,8 @@ export default function ExamPage({ params }) {
   async function handleStartExam() {
     const { data: newAttempt, error } = await supabase
       .from("exam_attempts")
-      .insert({ student_id: user.id, exam_id: examId })
+      // تم التعديل هنا لربط المحاولة بـ profile.id
+      .insert({ student_id: profile.id, exam_id: examId })
       .select("id, status, started_at, submitted_at, score")
       .single();
 
@@ -303,8 +301,6 @@ export default function ExamPage({ params }) {
   }
 
   async function handleSelectOption(questionId, optionKey) {
-    // Optimistic UI update — we don't surface the returned correctness here
-    // on purpose, to avoid giving away answers mid-exam.
     setAnswers((prev) => ({ ...prev, [questionId]: optionKey }));
 
     const { error } = await supabase.rpc("submit_exam_answer", {
@@ -417,7 +413,6 @@ export default function ExamPage({ params }) {
     );
   }
 
-  // phase === "in_progress"
   const answeredCount = Object.keys(answers).length;
 
   return (

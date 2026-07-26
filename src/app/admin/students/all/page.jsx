@@ -36,7 +36,7 @@ export default function AllStudentsPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("subscriptions")
-        .select("student_id, status, subject:subject_id(name)")
+        .select("student_id, package_id")
         .eq("status", "active"),
     ]);
 
@@ -46,17 +46,24 @@ export default function AllStudentsPage() {
       return;
     }
 
-    const subjectsByStudent = new Map();
+    const packageIds = [...new Set((subscriptionRows ?? []).map((r) => r.package_id))];
+    const { data: packageRows } = packageIds.length
+      ? await supabase.from("packages").select("id, name").in("id", packageIds)
+      : { data: [] };
+
+    const packageById = new Map((packageRows ?? []).map((p) => [p.id, p]));
+
+    const packagesByStudent = new Map();
     (subscriptionRows ?? []).forEach((row) => {
-      const list = subjectsByStudent.get(row.student_id) ?? [];
-      list.push(row.subject?.name);
-      subjectsByStudent.set(row.student_id, list);
+      const list = packagesByStudent.get(row.student_id) ?? [];
+      list.push(packageById.get(row.package_id)?.name);
+      packagesByStudent.set(row.student_id, list);
     });
 
     setStudents(
       (profileRows ?? []).map((profile) => ({
         ...profile,
-        activeSubjects: subjectsByStudent.get(profile.id) ?? [],
+        activePackages: packagesByStudent.get(profile.id) ?? [],
       })),
     );
     setIsLoading(false);
@@ -164,7 +171,7 @@ export default function AllStudentsPage() {
               <tr>
                 <th className="px-6 py-4 font-semibold">الطالب</th>
                 <th className="px-6 py-4 font-semibold">الصف</th>
-                <th className="px-6 py-4 font-semibold">المواد النشطة</th>
+                <th className="px-6 py-4 font-semibold">الباقات النشطة</th>
                 <th className="px-6 py-4 font-semibold">تاريخ الانضمام</th>
                 <th className="px-6 py-4 font-semibold">الحالة</th>
                 <th className="px-6 py-4 font-semibold">إجراءات</th>
@@ -195,8 +202,8 @@ export default function AllStudentsPage() {
                       "—"}
                   </td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                    {student.activeSubjects.length > 0
-                      ? student.activeSubjects.join("، ")
+                    {student.activePackages.length > 0
+                      ? student.activePackages.join("، ")
                       : "لا يوجد"}
                   </td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-400">

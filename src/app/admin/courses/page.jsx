@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { PlayCircle, Trash2, Users, Clock } from "lucide-react";
+import { PlayCircle, Trash2, Users } from "lucide-react";
 import { createClient } from "../../utils/supabase/client";
 import { useToast } from "../../components/ui/ToastProvider";
 import { Skeleton } from "../../components/ui/Skeleton";
-import { GRADE_LABELS } from "../../utils/supabase/adminHelpers";
 
 export default function CoursesPage() {
   const { showToast } = useToast();
@@ -20,10 +19,12 @@ export default function CoursesPage() {
     setIsLoadingSubjects(true);
     const supabase = createClient();
 
+    // جلب المواد مع package_id بدلاً من grade_level
+    // جلب الاشتراكات مع package_id بدلاً من subject_id
     const [{ data: subjectRows, error }, { data: subscriptionRows }] =
       await Promise.all([
-        supabase.from("subjects").select("id, name, grade_level").order("name"),
-        supabase.from("subscriptions").select("subject_id, status"),
+        supabase.from("subjects").select("id, name, package_id").order("name"),
+        supabase.from("subscriptions").select("package_id, status"),
       ]);
 
     if (error) {
@@ -32,18 +33,20 @@ export default function CoursesPage() {
       return;
     }
 
-    const activeCountBySubject = new Map();
+    // حساب عدد الطلاب النشطين بناءً على الباقة (package_id)
+    const activeCountByPackage = new Map();
     (subscriptionRows ?? []).forEach((row) => {
       if (row.status !== "active") return;
-      activeCountBySubject.set(
-        row.subject_id,
-        (activeCountBySubject.get(row.subject_id) ?? 0) + 1,
+      activeCountByPackage.set(
+        row.package_id,
+        (activeCountByPackage.get(row.package_id) ?? 0) + 1,
       );
     });
 
+    // ربط عدد طلاب الباقة بكل مادة تنتمي لهذه الباقة
     const rows = (subjectRows ?? []).map((s) => ({
       ...s,
-      activeStudents: activeCountBySubject.get(s.id) ?? 0,
+      activeStudents: activeCountByPackage.get(s.package_id) ?? 0,
     }));
 
     setSubjects(rows);
@@ -145,15 +148,12 @@ export default function CoursesPage() {
                     : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-400 dark:hover:bg-slate-900"
                 }`}
               >
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  {GRADE_LABELS[subject.grade_level] ?? subject.grade_level}
-                </p>
-                <h2 className="mt-3 text-xl font-semibold text-slate-900 dark:text-white">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                   {subject.name}
                 </h2>
                 <div className="mt-6 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                   <Users size={16} />
-                  <span>{subject.activeStudents} طالب نشط</span>
+                  <span>{subject.activeStudents} طالب نشط في الباقة</span>
                 </div>
               </button>
             ))}

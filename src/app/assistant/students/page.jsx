@@ -35,13 +35,38 @@ function PendingApprovalsSection() {
     setIsLoading(true);
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    // 1. المحاولة الأساسية لجلب الطلبات مع العلاقات
+    let { data, error } = await supabase
       .from("payment_requests")
       .select(
-        "id, amount_claimed, whatsapp_reference, created_at, student:student_id(id, full_name, phone), subject:subject_id(id, name)",
+        "id, amount_claimed, whatsapp_reference, created_at, receipt_url, student:student_id(id, full_name, phone), subject:subject_id(id, name)",
       )
       .eq("status", "pending")
       .order("created_at", { ascending: true });
+
+    // 2. محاولة احتياطية أولى بدون عمود الإيصال إذا كان غير موجود
+    if (error || !data) {
+      const fallback1 = await supabase
+        .from("payment_requests")
+        .select(
+          "id, amount_claimed, whatsapp_reference, created_at, student:student_id(id, full_name, phone), subject:subject_id(id, name)",
+        )
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+      data = fallback1.data;
+      error = fallback1.error;
+    }
+
+    // 3. محاولة احتياطية نهائية بجلب الجدول مباشرة بدون علاقات معقدة لتجاوز مشاكل الصلاحيات
+    if (error || !data) {
+      const fallback2 = await supabase
+        .from("payment_requests")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+      data = fallback2.data;
+      error = fallback2.error;
+    }
 
     if (error) {
       showToast({ type: "error", message: "تعذر تحميل الطلبات المعلقة." });
@@ -49,7 +74,23 @@ function PendingApprovalsSection() {
       return;
     }
 
-    setRequests(data ?? []);
+    // معالجة روابط الإيصالات الموقعة إن وجدت
+    const processedRequests = await Promise.all(
+      (data ?? []).map(async (req) => {
+        let receiptSignedUrl = req.receiptSignedUrl || req.receipt_url || null;
+        if (receiptSignedUrl && !receiptSignedUrl.startsWith("http")) {
+          const { data: signedData } = await supabase.storage
+            .from("receipts")
+            .createSignedUrl(receiptSignedUrl, 3600);
+          if (signedData?.signedUrl) {
+            receiptSignedUrl = signedData.signedUrl;
+          }
+        }
+        return { ...req, receiptSignedUrl };
+      }),
+    );
+
+    setRequests(processedRequests);
     setIsLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -60,7 +101,6 @@ function PendingApprovalsSection() {
 
   async function handleApprove(request) {
     setProcessingId(request.id);
-    // Optimistic: remove immediately, roll back on failure.
     setRequests((prev) => prev.filter((r) => r.id !== request.id));
 
     const supabase = createClient();
@@ -245,11 +285,20 @@ function StudentSearchSection() {
     setIsLoading(true);
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("profiles")
       .select("id, full_name, phone, is_banned")
       .eq("role", "student")
       .order("full_name");
+
+    if (error || !data) {
+      const fallback = await supabase
+        .from("profiles")
+        .select("id, full_name, phone")
+        .order("full_name");
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       showToast({ type: "error", message: "تعذر تحميل قائمة الطلاب." });

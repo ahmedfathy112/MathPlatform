@@ -9,8 +9,8 @@ import {
   Lock,
   PlayCircle,
 } from "lucide-react";
-import { createClient } from "../../../../../utils/supabase/client";
-import { Skeleton } from "../../../../../components/ui/Skeleton";
+import { createClient } from "../../../../../../utils/supabase/client";
+import { Skeleton } from "../../../../../../components/ui/Skeleton";
 
 function isEmbedUrl(url) {
   return (
@@ -24,7 +24,7 @@ function isEmbedUrl(url) {
 
 export default function LessonPage({ params }) {
   const resolvedParams = use(params);
-  const { classId: subjectId, lessonId: videoId } = resolvedParams;
+  const { packageId, subjectId, lessonId: videoId } = resolvedParams;
 
   const [video, setVideo] = useState(null);
   const [attachments, setAttachments] = useState([]);
@@ -98,7 +98,7 @@ export default function LessonPage({ params }) {
           إما أن الدرس غير موجود، أو أنك لا تملك اشتراكًا فعّالًا في هذه المادة.
         </p>
         <Link
-          href={`/dashboard/classes/${subjectId}`}
+          href={`/dashboard/classes/${packageId}/${subjectId}`}
           className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
         >
           العودة إلى المادة
@@ -200,7 +200,7 @@ export default function LessonPage({ params }) {
           </div>
 
           <Link
-            href={`/dashboard/classes/${subjectId}`}
+            href={`/dashboard/classes/${packageId}/${subjectId}`}
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-4 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             <ArrowLeft size={18} />

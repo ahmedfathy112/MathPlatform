@@ -2,16 +2,12 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { BookOpen, CalendarDays, Clock3, Lock } from "lucide-react";
-import { createClient } from "../../../utils/supabase/client";
-import { useAuthStore, selectUser } from "../../../store/useAuthStore";
-import {
-  usePlatformStore,
-  selectHasActiveAccess,
-} from "../../../store/usePlatformStore";
-import { useToast } from "../../../components/ui/ToastProvider";
-import { Skeleton } from "../../../components/ui/Skeleton";
-import VideoLessonCard from "../../../components/VideoLessonCard";
+import { ArrowRight, BookOpen, CalendarDays, Clock3, Lock } from "lucide-react";
+import { createClient } from "../../../../utils/supabase/client";
+import { useAuthStore, selectUser } from "../../../../store/useAuthStore";
+import { useToast } from "../../../../components/ui/ToastProvider";
+import { Skeleton } from "../../../../components/ui/Skeleton";
+import VideoLessonCard from "../../../../components/VideoLessonCard";
 
 function formatExamDate(isoString) {
   return new Date(isoString).toLocaleString("ar-EG", {
@@ -20,20 +16,18 @@ function formatExamDate(isoString) {
   });
 }
 
-/** Shown while a student has no active subscription for this subject yet. */
-function NoAccessState({ subjectName }) {
+function NoAccessState({ packageId }) {
   return (
     <div className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-sm">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
         <Lock size={24} />
       </div>
       <h2 className="mt-4 text-xl font-semibold text-slate-900">
-        لا يوجد اشتراك فعّال{" "}
-        {subjectName ? `في "${subjectName}"` : "في هذه المادة"}
+        لا يوجد اشتراك فعّال في هذه الباقة
       </h2>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
-        اشترك في هذه المادة أو تواصل مع المسؤول لتفعيل حسابك حتى تتمكن من مشاهدة
-        الدروس والاختبارات الخاصة بها.
+        اشترك في هذه الباقة أو تواصل مع المسؤول لتفعيل حسابك حتى تتمكن من
+        مشاهدة الدروس والاختبارات الخاصة بها.
       </p>
       <Link
         href="/dashboard/subscriptions"
@@ -45,31 +39,23 @@ function NoAccessState({ subjectName }) {
   );
 }
 
-export default function ClassPage({ params }) {
+export default function SubjectPage({ params }) {
   const resolvedParams = use(params);
-  const subjectId = resolvedParams.classId;
+  const packageId = resolvedParams.packageId;
+  const subjectId = resolvedParams.subjectId;
 
   const user = useAuthStore(selectUser);
-  const setSelectedSubject = usePlatformStore(
-    (state) => state.setSelectedSubject,
-  );
-  const setSubscription = usePlatformStore((state) => state.setSubscription);
-  const setLoadingSubscription = usePlatformStore(
-    (state) => state.setLoadingSubscription,
-  );
-  const subject = usePlatformStore((state) => state.selectedSubject);
-  const hasActiveAccess = usePlatformStore(selectHasActiveAccess);
   const { showToast } = useToast();
 
+  const [subject, setSubject] = useState(null);
   const [videos, setVideos] = useState([]);
   const [exams, setExams] = useState([]);
+  const [hasActiveAccess, setHasActiveAccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (!user?.id || !subjectId) {
-      return;
-    }
+    if (!user?.id || !packageId || !subjectId) return;
 
     let cancelled = false;
     const supabase = createClient();
@@ -77,22 +63,24 @@ export default function ClassPage({ params }) {
     async function load() {
       setIsLoading(true);
       setNotFound(false);
-      setLoadingSubscription(true);
 
+      // A student could deep-link straight to a subject URL without going
+      // through the package grid first, so access is re-checked here rather
+      // than assumed from wherever they navigated from.
       const [
         { data: subjectRow, error: subjectError },
         { data: subscriptionRow },
       ] = await Promise.all([
         supabase
           .from("subjects")
-          .select("id, name, grade_level, description")
+          .select("id, name, description, package_id")
           .eq("id", subjectId)
           .maybeSingle(),
         supabase
           .from("subscriptions")
           .select("status, expires_at")
           .eq("student_id", user.id)
-          .eq("subject_id", subjectId)
+          .eq("package_id", packageId)
           .maybeSingle(),
       ]);
 
@@ -101,24 +89,23 @@ export default function ClassPage({ params }) {
       if (subjectError) {
         showToast({ type: "error", message: "تعذر تحميل بيانات المادة." });
         setIsLoading(false);
-        setLoadingSubscription(false);
         return;
       }
 
-      if (!subjectRow) {
+      if (!subjectRow || subjectRow.package_id !== packageId) {
         setNotFound(true);
         setIsLoading(false);
-        setLoadingSubscription(false);
         return;
       }
 
-      setSelectedSubject(subjectRow);
-      setSubscription(subscriptionRow);
+      setSubject(subjectRow);
 
       const isActive =
         subscriptionRow?.status === "active" &&
         (!subscriptionRow.expires_at ||
           new Date(subscriptionRow.expires_at) > new Date());
+
+      setHasActiveAccess(isActive);
 
       if (!isActive) {
         setVideos([]);
@@ -127,9 +114,11 @@ export default function ClassPage({ params }) {
         return;
       }
 
-      // RLS also enforces this subscription check server-side (has_active_subscription),
-      // so these queries will simply return empty sets if access is ever revoked
-      // mid-session — this client-side check just avoids an unnecessary round trip.
+      // RLS also enforces this subscription check server-side
+      // (has_active_subscription, via the subject's package), so these
+      // queries simply return empty sets if access is ever revoked
+      // mid-session — this client-side check just avoids an unnecessary
+      // round trip.
       const [{ data: videoRows }, { data: examRows }] = await Promise.all([
         supabase
           .from("videos")
@@ -156,13 +145,7 @@ export default function ClassPage({ params }) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    user?.id,
-    subjectId,
-    setSelectedSubject,
-    setSubscription,
-    setLoadingSubscription,
-  ]);
+  }, [user?.id, packageId, subjectId]);
 
   if (isLoading) {
     return (
@@ -189,25 +172,30 @@ export default function ClassPage({ params }) {
   return (
     <div className="space-y-8">
       <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-3">
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-blue-600">
-              مادة دراسية
+        <Link
+          href={`/dashboard/classes/${packageId}`}
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
+        >
+          <ArrowRight size={16} />
+          العودة إلى مواد الباقة
+        </Link>
+        <div className="mt-4 space-y-3">
+          <p className="text-sm font-medium uppercase tracking-[0.24em] text-blue-600">
+            مادة دراسية
+          </p>
+          <h1 className="text-3xl font-semibold text-slate-900">
+            {subject?.name ?? "المادة"}
+          </h1>
+          {subject?.description ? (
+            <p className="max-w-2xl text-sm leading-6 text-slate-600">
+              {subject.description}
             </p>
-            <h1 className="text-3xl font-semibold text-slate-900">
-              {subject?.name ?? "المادة"}
-            </h1>
-            {subject?.description ? (
-              <p className="max-w-2xl text-sm leading-6 text-slate-600">
-                {subject.description}
-              </p>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       </div>
 
       {!hasActiveAccess ? (
-        <NoAccessState subjectName={subject?.name} />
+        <NoAccessState packageId={packageId} />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
           <div className="space-y-6 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -233,7 +221,7 @@ export default function ClassPage({ params }) {
                 {videos.map((video) => (
                   <Link
                     key={video.id}
-                    href={`/dashboard/classes/${subjectId}/lessons/${video.id}`}
+                    href={`/dashboard/classes/${packageId}/${subjectId}/lessons/${video.id}`}
                   >
                     <VideoLessonCard
                       title={video.title}
@@ -270,7 +258,7 @@ export default function ClassPage({ params }) {
                 {exams.map((exam) => (
                   <Link
                     key={exam.id}
-                    href={`/dashboard/classes/${subjectId}/exams/${exam.id}`}
+                    href={`/dashboard/classes/${packageId}/${subjectId}/exams/${exam.id}`}
                     className="block rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:border-blue-200 hover:bg-white"
                   >
                     <div className="flex items-center justify-between gap-3">

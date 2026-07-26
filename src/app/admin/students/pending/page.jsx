@@ -19,11 +19,13 @@ export default function PendingStudentsPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    // Plain fetch + client-side merge on purpose, not an embedded-relationship
+    // select: payment_requests has two FKs into profiles (student_id and
+    // reviewed_by), and PostgREST's disambiguation hint syntax proved
+    // version-dependent against this project's setup.
+    const { data: requestRows, error } = await supabase
       .from("payment_requests")
-      .select(
-        "id, amount_claimed, whatsapp_reference, created_at, student:student_id(id, full_name, phone), subject:subject_id(id, name)",
-      )
+      .select("id, amount_claimed, whatsapp_reference, created_at, student_id, package_id")
       .eq("status", "pending")
       .order("created_at", { ascending: true });
 
@@ -33,7 +35,29 @@ export default function PendingStudentsPage() {
       return;
     }
 
-    setRequests(data ?? []);
+    const rows = requestRows ?? [];
+    const studentIds = [...new Set(rows.map((r) => r.student_id))];
+    const packageIds = [...new Set(rows.map((r) => r.package_id))];
+
+    const [{ data: studentRows }, { data: packageRows }] = await Promise.all([
+      studentIds.length
+        ? supabase.from("profiles").select("id, full_name, phone").in("id", studentIds)
+        : Promise.resolve({ data: [] }),
+      packageIds.length
+        ? supabase.from("packages").select("id, name").in("id", packageIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const studentById = new Map((studentRows ?? []).map((s) => [s.id, s]));
+    const packageById = new Map((packageRows ?? []).map((p) => [p.id, p]));
+
+    setRequests(
+      rows.map((row) => ({
+        ...row,
+        student: studentById.get(row.student_id) ?? null,
+        package: packageById.get(row.package_id) ?? null,
+      })),
+    );
     setIsLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -129,7 +153,7 @@ export default function PendingStudentsPage() {
                     {request.student?.full_name ?? "طالب"}
                   </h2>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                    اشتراك في: {request.subject?.name ?? "—"}
+                    اشتراك في باقة: {request.package?.name ?? "—"}
                   </p>
                 </div>
                 <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">

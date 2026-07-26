@@ -27,6 +27,9 @@ import {
 import { useAuthStore } from "../../store/useAuthStore";
 
 const gradeOptions = [
+  { value: "first_prep", label: "الصف الأول الاعدادي" },
+  { value: "second_prep", label: "الصف الثاني الاعدادي" },
+  { value: "third_prep", label: "الصف الثالث الاعدادي" },
   { value: "first", label: "الصف الأول الثانوي" },
   { value: "second", label: "الصف الثاني الثانوي" },
   { value: "third", label: "الصف الثالث الثانوي" },
@@ -42,9 +45,20 @@ const registrationSchema = z
     grade: z
       .string()
       .min(1, "يرجى اختيار الصف الدراسي")
-      .refine((value) => ["first", "second", "third"].includes(value), {
-        message: "يرجى اختيار الصف الدراسي",
-      }),
+      .refine(
+        (value) =>
+          [
+            "first_prep",
+            "second_prep",
+            "third_prep",
+            "first",
+            "second",
+            "third",
+          ].includes(value),
+        {
+          message: "يرجى اختيار الصف الدراسي",
+        },
+      ),
     password: z.string().min(6, "كلمة المرور يجب ألا تقل عن 6 أحرف"),
     confirmPassword: z
       .string()
@@ -258,11 +272,6 @@ export default function RegisterPage() {
     const supabase = createClient();
     const email = phoneToSyntheticEmail(phone);
 
-    // full_name/phone/grade_level ride along as auth metadata; the
-    // on_auth_user_created trigger (16_handle_new_user_trigger.sql) uses
-    // them to create the matching `profiles` row in the SAME transaction
-    // as the auth user, so there's no window where the user exists but the
-    // profile doesn't.
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
       {
         email,
@@ -286,28 +295,18 @@ export default function RegisterPage() {
       return;
     }
 
-    // Supabase's sign-up quirk: if this email/phone is already registered,
-    // signUp() can return a user with an empty `identities` array instead
-    // of a hard error.
     if (signUpData.user && signUpData.user.identities?.length === 0) {
       setFormError("رقم الهاتف مسجل بالفعل. جرّب تسجيل الدخول بدلًا من ذلك.");
       return;
     }
 
     if (!signUpData.session) {
-      // Email confirmation is likely still enabled on this Supabase project.
-      // Since we use a synthetic, non-deliverable email, that confirmation
-      // link can never arrive — this must be turned off for phone-based
-      // registration to work (Auth -> Providers -> Email -> Confirm email).
       setFormError(
         "تم إنشاء الحساب لكن لم يتم تفعيل الجلسة تلقائيًا. يرجى التواصل مع الدعم الفني.",
       );
       return;
     }
 
-    // The trigger already created the profile row by the time signUp()
-    // resolved, but we still retry briefly in case of replication lag on
-    // read replicas — this is defensive, not the actual race fix.
     const profile = await fetchProfileWithRetry(supabase, signUpData.user.id);
 
     if (!profile) {

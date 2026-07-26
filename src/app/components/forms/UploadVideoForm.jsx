@@ -49,10 +49,22 @@ export default function UploadVideoForm({ redirectTo = "/admin/courses" }) {
 
     async function load() {
       setIsLoadingSubjects(true);
-      const { data, error } = await supabase
+
+      // محاولة جلب المواد بالأعمدة الكاملة
+      let { data, error } = await supabase
         .from("subjects")
         .select("id, name, grade_level")
         .order("name");
+
+      // محاولة احتياطية في حال فشل الاستعلام الأساسي لتجاوز مشاكل الأعمدة أو الصلاحيات
+      if (error || !data) {
+        const fallback = await supabase
+          .from("subjects")
+          .select("id, name")
+          .order("name");
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (cancelled) return;
 
@@ -74,12 +86,17 @@ export default function UploadVideoForm({ redirectTo = "/admin/courses" }) {
   const onSubmit = async ({ subjectId, title, description, videoUrl }) => {
     const supabase = createClient();
 
+    // جلب المستخدم الحالي ديناميكياً لتوافق صلاحيات المساعد أو المعلم
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { error } = await supabase.from("videos").insert({
       subject_id: subjectId,
       title,
       description: description?.trim() || null,
       video_url: videoUrl,
-      created_by: process.env.NEXT_PUBLIC_SUPABASE_TEACHER,
+      created_by: user?.id || process.env.NEXT_PUBLIC_SUPABASE_TEACHER,
     });
 
     if (error) {
@@ -121,8 +138,10 @@ export default function UploadVideoForm({ redirectTo = "/admin/courses" }) {
             </option>
             {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>
-                {subject.name} —{" "}
-                {GRADE_LABELS[subject.grade_level] ?? subject.grade_level}
+                {subject.name}
+                {subject.grade_level
+                  ? ` — ${GRADE_LABELS[subject.grade_level] ?? subject.grade_level}`
+                  : ""}
               </option>
             ))}
           </select>

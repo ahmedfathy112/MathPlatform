@@ -8,7 +8,6 @@ import { z } from "zod";
 import { Link2, Loader2, UploadCloud } from "lucide-react";
 import { createClient } from "../../../utils/supabase/client";
 import { useToast } from "../../../components/ui/ToastProvider";
-import { GRADE_LABELS } from "../../../utils/supabase/adminHelpers";
 
 const videoSchema = z.object({
   subjectId: z.string().min(1, "يرجى اختيار المادة"),
@@ -45,7 +44,7 @@ export default function UploadVideoPage() {
       setIsLoadingSubjects(true);
       const { data, error } = await supabase
         .from("subjects")
-        .select("id, name, grade_level")
+        .select("id, name")
         .order("name");
 
       if (cancelled) return;
@@ -115,8 +114,7 @@ export default function UploadVideoPage() {
             </option>
             {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>
-                {subject.name} —{" "}
-                {GRADE_LABELS[subject.grade_level] ?? subject.grade_level}
+                {subject.name}
               </option>
             ))}
           </select>
