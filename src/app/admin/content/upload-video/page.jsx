@@ -8,8 +8,11 @@ import { z } from "zod";
 import { Link2, Loader2, UploadCloud } from "lucide-react";
 import { createClient } from "../../../utils/supabase/client";
 import { useToast } from "../../../components/ui/ToastProvider";
+import { GRADE_LABELS } from "../../../utils/supabase/adminHelpers";
+import { useAuthStore, selectProfile } from "../../../store/useAuthStore";
 
 const videoSchema = z.object({
+  packageId: z.string().min(1, "يرجى اختيار السنة الدراسية"),
   subjectId: z.string().min(1, "يرجى اختيار المادة"),
   title: z.string().trim().min(3, "يرجى إدخال عنوان الدرس"),
   description: z.string().optional(),
@@ -23,20 +26,75 @@ const videoSchema = z.object({
 export default function UploadVideoPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const profile = useAuthStore(selectProfile);
+
+  const [packages, setPackages] = useState([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(true);
   const [subjects, setSubjects] = useState([]);
-  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(videoSchema),
-    defaultValues: { subjectId: "", title: "", description: "", videoUrl: "" },
+    defaultValues: {
+      packageId: "",
+      subjectId: "",
+      title: "",
+      description: "",
+      videoUrl: "",
+    },
   });
 
+  const selectedPackageId = watch("packageId");
+
   useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function load() {
+      setIsLoadingPackages(true);
+      const { data, error } = await supabase
+        .from("packages")
+        .select("id, name, grade_level")
+        .eq("is_active", true)
+        .order("name");
+
+      if (cancelled) return;
+
+      if (error) {
+        showToast({
+          type: "error",
+          message: "تعذر تحميل قائمة السنوات الدراسية.",
+        });
+      }
+
+      setPackages(data ?? []);
+      setIsLoadingPackages(false);
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // Reset the subject choice whenever the package changes, so a subject
+    // from the previously selected year can never be submitted by mistake.
+    setValue("subjectId", "");
+
+    if (!selectedPackageId) {
+      setSubjects([]);
+      return;
+    }
+
     let cancelled = false;
     const supabase = createClient();
 
@@ -45,12 +103,17 @@ export default function UploadVideoPage() {
       const { data, error } = await supabase
         .from("subjects")
         .select("id, name")
+        .eq("package_id", selectedPackageId)
+        .eq("is_active", true)
         .order("name");
 
       if (cancelled) return;
 
       if (error) {
-        showToast({ type: "error", message: "تعذر تحميل قائمة المواد." });
+        showToast({
+          type: "error",
+          message: "تعذر تحميل مواد هذه السنة الدراسية.",
+        });
       }
 
       setSubjects(data ?? []);
@@ -62,7 +125,7 @@ export default function UploadVideoPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedPackageId]);
 
   const onSubmit = async ({ subjectId, title, description, videoUrl }) => {
     const supabase = createClient();
@@ -72,7 +135,7 @@ export default function UploadVideoPage() {
       title,
       description: description?.trim() || null,
       video_url: videoUrl,
-      created_by: process.env.NEXT_PUBLIC_SUPABASE_TEACHER,
+      created_by: profile.id,
     });
 
     if (error) {
@@ -92,7 +155,7 @@ export default function UploadVideoPage() {
           إضافة فيديو جديد
         </h1>
         <p className="mt-1 text-slate-600 dark:text-slate-400">
-          أضف رابط فيديو خارجي (مثل Bunny.net) إلى إحدى المواد الدراسية.
+          أضف رابط فيديو خارجي (مثل Bunny.net) إلى إحدى مواد باقة دراسية.
         </p>
       </div>
 
@@ -102,15 +165,44 @@ export default function UploadVideoPage() {
       >
         <div>
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            السنة الدراسية (الباقة)
+          </label>
+          <select
+            {...register("packageId")}
+            disabled={isLoadingPackages}
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          >
+            <option value="">
+              {isLoadingPackages ? "جارٍ التحميل..." : "اختر السنة الدراسية"}
+            </option>
+            {packages.map((pkg) => (
+              <option key={pkg.id} value={pkg.id}>
+                {pkg.name} — {GRADE_LABELS[pkg.grade_level] ?? pkg.grade_level}
+              </option>
+            ))}
+          </select>
+          {errors.packageId ? (
+            <p className="mt-1 text-sm text-rose-600">
+              {errors.packageId.message}
+            </p>
+          ) : null}
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
             المادة الدراسية
           </label>
           <select
             {...register("subjectId")}
-            disabled={isLoadingSubjects}
+            disabled={!selectedPackageId || isLoadingSubjects}
             className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           >
             <option value="">
-              {isLoadingSubjects ? "جارٍ التحميل..." : "اختر المادة"}
+              {!selectedPackageId
+                ? "اختر السنة الدراسية أولًا"
+                : isLoadingSubjects
+                  ? "جارٍ التحميل..."
+                  : "اختر المادة"}
             </option>
             {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>

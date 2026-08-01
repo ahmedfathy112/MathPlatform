@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { createClient } from "../../../utils/supabase/client";
 import { useToast } from "../../../components/ui/ToastProvider";
+import { GRADE_LABELS } from "../../../utils/supabase/adminHelpers";
+import { useAuthStore, selectProfile } from "../../../store/useAuthStore";
 
 const OPTION_KEYS = ["A", "B", "C", "D"];
 
@@ -21,10 +23,14 @@ function makeEmptyQuestion() {
 export default function CreateExamPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const profile = useAuthStore(selectProfile);
 
+  const [packages, setPackages] = useState([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(true);
   const [subjects, setSubjects] = useState([]);
-  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   const [examForm, setExamForm] = useState({
+    packageId: "",
     subjectId: "",
     title: "",
     description: "",
@@ -41,16 +47,62 @@ export default function CreateExamPage() {
     const supabase = createClient();
 
     async function load() {
-      setIsLoadingSubjects(true);
+      setIsLoadingPackages(true);
       const { data, error } = await supabase
-        .from("subjects")
-        .select("id, name")
+        .from("packages")
+        .select("id, name, grade_level")
+        .eq("is_active", true)
         .order("name");
 
       if (cancelled) return;
 
       if (error) {
-        showToast({ type: "error", message: "تعذر تحميل قائمة المواد." });
+        showToast({
+          type: "error",
+          message: "تعذر تحميل قائمة السنوات الدراسية.",
+        });
+      }
+
+      setPackages(data ?? []);
+      setIsLoadingPackages(false);
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // Reset the subject choice whenever the package changes, so a subject
+    // from the previously selected year can never be submitted by mistake.
+    setExamForm((prev) => ({ ...prev, subjectId: "" }));
+
+    if (!examForm.packageId) {
+      setSubjects([]);
+      return;
+    }
+
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function load() {
+      setIsLoadingSubjects(true);
+      const { data, error } = await supabase
+        .from("subjects")
+        .select("id, name")
+        .eq("package_id", examForm.packageId)
+        .eq("is_active", true)
+        .order("name");
+
+      if (cancelled) return;
+
+      if (error) {
+        showToast({
+          type: "error",
+          message: "تعذر تحميل مواد هذه السنة الدراسية.",
+        });
       }
 
       setSubjects(data ?? []);
@@ -62,7 +114,7 @@ export default function CreateExamPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [examForm.packageId]);
 
   function updateExamField(field) {
     return (event) => {
@@ -109,6 +161,7 @@ export default function CreateExamPage() {
   }
 
   function validate() {
+    if (!examForm.packageId) return "يرجى اختيار السنة الدراسية";
     if (!examForm.subjectId) return "يرجى اختيار المادة";
     if (!examForm.title.trim()) return "يرجى إدخال عنوان الاختبار";
     if (!examForm.startTime || !examForm.endTime)
@@ -157,7 +210,7 @@ export default function CreateExamPage() {
         start_time: new Date(examForm.startTime).toISOString(),
         end_time: new Date(examForm.endTime).toISOString(),
         duration_minutes: Number(examForm.durationMinutes),
-        created_by: process.env.NEXT_PUBLIC_SUPABASE_TEACHER,
+        created_by: profile.id,
       })
       .select("id")
       .single();
@@ -235,16 +288,41 @@ export default function CreateExamPage() {
 
         <div>
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            السنة الدراسية (الباقة)
+          </label>
+          <select
+            value={examForm.packageId}
+            onChange={updateExamField("packageId")}
+            disabled={isLoadingPackages}
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          >
+            <option value="">
+              {isLoadingPackages ? "جارٍ التحميل..." : "اختر السنة الدراسية"}
+            </option>
+            {packages.map((pkg) => (
+              <option key={pkg.id} value={pkg.id}>
+                {pkg.name} — {GRADE_LABELS[pkg.grade_level] ?? pkg.grade_level}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
             المادة
           </label>
           <select
             value={examForm.subjectId}
             onChange={updateExamField("subjectId")}
-            disabled={isLoadingSubjects}
+            disabled={!examForm.packageId || isLoadingSubjects}
             className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           >
             <option value="">
-              {isLoadingSubjects ? "جارٍ التحميل..." : "اختر المادة"}
+              {!examForm.packageId
+                ? "اختر السنة الدراسية أولًا"
+                : isLoadingSubjects
+                  ? "جارٍ التحميل..."
+                  : "اختر المادة"}
             </option>
             {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>

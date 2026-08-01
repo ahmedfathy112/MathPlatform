@@ -24,6 +24,12 @@ import {
 } from "lucide-react";
 import { createClient } from "../utils/supabase/client";
 import { Skeleton } from "../components/ui/Skeleton";
+import {
+  useAuthStore,
+  selectProfile,
+  selectAuthStatus,
+} from "../store/useAuthStore";
+import MainNavbar from "../components/MainNavbar";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 28 },
@@ -91,70 +97,187 @@ const TONES = [
 ];
 
 export function CoursesSection() {
-  const [courses, setCourses] = useState([]);
+  const profile = useAuthStore(selectProfile);
+  const authStatus = useAuthStore(selectAuthStatus);
+
   const [isLoading, setIsLoading] = useState(true);
+  // "guest" | "subscribed" | "needs-subscription"
+  const [mode, setMode] = useState("guest");
+  const [items, setItems] = useState([]); // packages (guest/needs-subscription) or subjects (subscribed)
+  const [activePackageId, setActivePackageId] = useState(null);
 
   useEffect(() => {
+    // Wait for AuthListener to settle before deciding which branch to
+    // fetch — otherwise a logged-in visitor briefly flashes the
+    // logged-out state on every page load.
+    if (authStatus === "idle" || authStatus === "loading") return;
+
+    let cancelled = false;
     const supabase = createClient();
 
-    supabase
-      .from("subjects")
-      .select("name, grade_level, description")
-      .eq("is_active", true)
-      .order("name")
-      .then(({ data, error }) => {
-        if (!error && data) {
-          const mapped = data.map((item, index) => ({
-            title: item.name,
-            subtitle: GRADE_MAP[item.grade_level] || item.grade_level,
-            description: item.description,
-            icon: ICONS[index % ICONS.length],
-            tone: TONES[index % TONES.length],
-          }));
-          setCourses(mapped);
-        }
+    async function loadGuestPackages() {
+      const { data } = await supabase
+        .from("packages")
+        .select("id, name, grade_level, description")
+        .eq("is_active", true)
+        .order("name");
+
+      if (cancelled) return;
+      setMode("guest");
+      setItems(data ?? []);
+      setIsLoading(false);
+    }
+
+    async function loadForStudent() {
+      const { data: packageRows, error: packagesError } = await supabase
+        .from("packages")
+        .select("id, name, description, grade_level, is_active")
+        .eq("grade_level", profile.grade_level)
+        .eq("is_active", true)
+        .order("name");
+
+      if (cancelled) return;
+
+      if (packagesError) {
+        setMode("guest");
+        setItems([]);
         setIsLoading(false);
+        return;
+      }
+
+      const { data: subscriptionRows } = await supabase
+        .from("subscriptions")
+        .select("package_id, status, expires_at")
+        .eq("student_id", profile.id);
+
+      if (cancelled) return;
+
+      const subscriptionByPackage = new Map(
+        (subscriptionRows ?? []).map((row) => [row.package_id, row]),
+      );
+
+      const activePackage = (packageRows ?? []).find((pkg) => {
+        const sub = subscriptionByPackage.get(pkg.id);
+        if (!sub || sub.status !== "active") return false;
+        return !sub.expires_at || new Date(sub.expires_at) > new Date();
       });
-  }, []);
+
+      if (activePackage) {
+        const { data: subjectRows } = await supabase
+          .from("subjects")
+          .select("id, name, description")
+          .eq("package_id", activePackage.id)
+          .eq("is_active", true)
+          .order("name");
+
+        if (cancelled) return;
+        setMode("subscribed");
+        setActivePackageId(activePackage.id);
+        setItems(subjectRows ?? []);
+      } else {
+        setMode("needs-subscription");
+        setItems(packageRows ?? []);
+      }
+
+      setIsLoading(false);
+    }
+
+    setIsLoading(true);
+    if (authStatus === "authenticated" && profile) {
+      loadForStudent();
+    } else {
+      loadGuestPackages();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authStatus, profile]);
+
+  const emptyMessage =
+    mode === "subscribed"
+      ? "لا توجد مواد منشورة في باقتك بعد."
+      : "لا توجد باقات متاحة حالياً.";
 
   return (
-    <div className="mt-10 w-full">
+    <div className="mt-10 w-full space-y-6">
+      {!isLoading && authStatus === "authenticated" && profile ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-sky-200 bg-sky-50 px-6 py-4 dark:border-sky-900/50 dark:bg-sky-950/30">
+          <div>
+            <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">
+              مرحبًا، {profile.full_name}
+            </p>
+            <p className="text-xs text-sky-700 dark:text-sky-400">
+              {GRADE_MAP[profile.grade_level] || profile.grade_level}
+            </p>
+          </div>
+          {mode === "subscribed" ? (
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+              باقتك مفعّلة
+            </span>
+          ) : (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              لم تشترك بعد
+            </span>
+          )}
+        </div>
+      ) : null}
+
       {isLoading ? (
         <div className="w-full flex flex-row justify-center gap-6">
           <Skeleton className="h-48 w-full rounded-3xl" />
           <Skeleton className="h-48 w-full rounded-3xl" />
           <Skeleton className="h-48 w-full rounded-3xl" />
         </div>
-      ) : courses.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <p className="text-slate-600 dark:text-slate-400">
-            لا توجد مواد متاحة حالياً.
-          </p>
+          <p className="text-slate-600 dark:text-slate-400">{emptyMessage}</p>
         </div>
       ) : (
         <div className="flex w-full justify-center gap-6 max-md:flex-col">
-          {courses?.map((course, idx) => {
-            const IconComponent = course.icon;
+          {items.map((item, idx) => {
+            const Icon = ICONS[idx % ICONS.length];
+            const tone = TONES[idx % TONES.length];
+
+            const href =
+              mode === "guest"
+                ? "/login"
+                : mode === "subscribed"
+                  ? `/dashboard/classes/${activePackageId}/${item.id}`
+                  : `/dashboard/subscriptions/${item.id}`;
+
+            const subtitle =
+              mode === "subscribed"
+                ? "مادة دراسية"
+                : GRADE_MAP[item.grade_level] || item.grade_level;
+
             return (
-              <div
-                key={idx}
-                className={`bg-gradient-to-br ${course.tone} w-full rounded-3xl p-6 border border-white/5`}
+              <Link
+                key={item.id}
+                href={href}
+                className={`bg-gradient-to-br ${tone} w-full rounded-3xl p-6 border border-white/5 transition hover:-translate-y-1 hover:shadow-xl`}
               >
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm text-slate-300 font-medium">
-                    {course.subtitle}
+                    {subtitle}
                   </span>
                   <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm">
-                    <IconComponent className="h-6 w-6 text-white" />
+                    <Icon className="h-6 w-6 text-white" />
                   </div>
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">
-                  {course.title}
+                  {item.name}
                 </h3>
                 <p className="text-sm text-slate-300 leading-relaxed">
-                  {course.description}
+                  {item.description}
                 </p>
-              </div>
+                {mode === "needs-subscription" ? (
+                  <span className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-2 text-sm font-semibold text-white">
+                    اشترك الآن
+                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                ) : null}
+              </Link>
             );
           })}
         </div>
@@ -466,71 +589,7 @@ function LandingPage() {
       className="relative isolate overflow-hidden bg-[var(--background)] text-[var(--foreground)]"
     >
       {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/75">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="#hero" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg">
-              <Calculator className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-bold text-slate-950 dark:text-white">
-                منصة الرياضيات
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                طريقك الواضح نحو التفوق
-              </p>
-            </div>
-          </Link>
-
-          <nav className="hidden items-center gap-2 lg:flex">
-            <Link
-              href="#features"
-              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              المزايا
-            </Link>
-            <Link
-              href="#courses"
-              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              المواد الدراسية
-            </Link>
-            <Link
-              href="#method"
-              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              كيف تبدأ معنا؟
-            </Link>
-            <Link
-              href="#stories"
-              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              قصص النجاح
-            </Link>
-            <Link
-              href="#faq"
-              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              الأسئلة الشائعة
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="hidden h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:inline-flex"
-            >
-              تسجيل الدخول
-            </Link>
-            <Link
-              href="/register"
-              className="inline-flex h-11 items-center justify-center rounded-2xl bg-sky-600 px-5 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-500"
-            >
-              إنشاء حساب
-            </Link>
-          </div>
-        </div>
-      </header>
+      <MainNavbar />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[34rem] bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.22),transparent_30%),radial-gradient(circle_at_top_left,rgba(99,102,241,0.18),transparent_34%),linear-gradient(to_bottom,rgba(239,246,255,0.9),rgba(255,255,255,0))] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_top_left,rgba(99,102,241,0.12),transparent_34%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,0))]" />
       <div className="pointer-events-none absolute left-0 top-24 -z-10 h-80 w-80 rounded-full bg-sky-200/30 blur-3xl dark:bg-sky-500/10" />
@@ -808,10 +867,7 @@ function LandingPage() {
           title="اختر المسار المناسب وابدأ من المستوى الذي يخدم هدفك"
           description="كل مسار مصمم بعناية ليخاطب احتياجًا دراسيًا واضحًا، مع بنية تساعد الطالب على الانتقال من الأساس إلى الإتقان."
         />
-        <motion.div
-          variants={staggerVariants}
-          className="mt-10 w-full "
-        >
+        <motion.div variants={staggerVariants} className="mt-10 w-full ">
           <CoursesSection />
         </motion.div>
       </motion.section>
