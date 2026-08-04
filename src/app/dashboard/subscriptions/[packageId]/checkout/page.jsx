@@ -13,7 +13,7 @@ import { useToast } from "../../../../components/ui/ToastProvider";
 import { Skeleton } from "../../../../components/ui/Skeleton";
 
 const VODAFONE_CASH_NUMBER =
-  process.env.NEXT_PUBLIC_VODAFONE_CASH_NUMBER || "01060733679";
+  process.env.NEXT_PUBLIC_VODAFONE_CASH_NUMBER || "01007733264";
 
 const paymentRequestSchema = z.object({
   amountClaimed: z

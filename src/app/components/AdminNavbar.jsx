@@ -1,20 +1,20 @@
 "use client";
 
 import { Bell, Settings, User } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminNavbar() {
   return (
     <nav className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/50">
+      <div className="flex items-center gap-4 py-5 px-3.5 rounded-4xl bg-slate-100 text-sm font-semibold text-slate-900 dark:bg-blue-600 dark:text-white">
+        <Link
+          className="text-lg font-bold text-slate-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400"
+          href={"/"}
+        >
+          الأستاذ
+        </Link>
+      </div>
       <div className="flex flex-1 items-center justify-end gap-4">
-        <button className="relative rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">
-          <Bell size={20} />
-          <span className="absolute top-1 right-1 flex h-2 w-2 items-center justify-center rounded-full bg-red-500" />
-        </button>
-
-        <button className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">
-          <Settings size={20} />
-        </button>
-
         <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-semibold text-white">
             أ

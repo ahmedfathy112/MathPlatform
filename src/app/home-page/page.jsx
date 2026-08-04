@@ -1031,7 +1031,7 @@ function LandingPage() {
       </footer>
 
       <a
-        href="https://wa.me/01060733679"
+        href="https://wa.me/01007733264"
         target="_blank"
         rel="noreferrer"
         aria-label="التواصل عبر واتساب"
