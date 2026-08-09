@@ -29,6 +29,9 @@ export const GRADE_UI_TO_ENUM = {
   first: "secondary_1",
   second: "secondary_2",
   third: "secondary_3",
+  first_prep: "prep_1",
+  second_prep: "prep_2",
+  third_prep: "prep_3",
 };
 
 /**

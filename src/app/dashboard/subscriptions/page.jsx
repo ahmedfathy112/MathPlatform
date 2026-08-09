@@ -47,10 +47,10 @@ export default function SubscriptionsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
           الاشتراكات
         </h1>
-        <p className="mt-2 text-slate-600">
+        <p className="mt-1 text-slate-600 dark:text-slate-400">
           إدارة اشتراكاتك في الباقات
         </p>
       </div>
@@ -62,11 +62,11 @@ export default function SubscriptionsPage() {
           ))}
         </div>
       ) : packages.length === 0 ? (
-        <div className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-700">
             <PackageOpen size={22} />
           </div>
-          <p className="mt-4 text-slate-600">
+          <p className="mt-4 text-slate-600 dark:text-slate-400">
             لا توجد باقات متاحة لصفك الدراسي حاليًا.
           </p>
         </div>
