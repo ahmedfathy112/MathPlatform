@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, ShieldOff, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, Search, ShieldOff, ShieldCheck } from "lucide-react";
 import { createClient } from "../../../utils/supabase/client";
 import { useToast } from "../../../components/ui/ToastProvider";
 import { Skeleton } from "../../../components/ui/Skeleton";
@@ -46,7 +47,9 @@ export default function AllStudentsPage() {
       return;
     }
 
-    const packageIds = [...new Set((subscriptionRows ?? []).map((r) => r.package_id))];
+    const packageIds = [
+      ...new Set((subscriptionRows ?? []).map((r) => r.package_id)),
+    ];
     const { data: packageRows } = packageIds.length
       ? await supabase.from("packages").select("id, name").in("id", packageIds)
       : { data: [] };
@@ -124,7 +127,7 @@ export default function AllStudentsPage() {
           جميع الطلاب
         </h1>
         <p className="mt-1 text-slate-600 dark:text-slate-400">
-          راجع كافة الطلاب وحالتهم، وأوقف أو فعّل أي حساب مباشرة.
+          راجع كافة الطلاب وحالتهم، وافتح ملف أي طالب لعرض التفاصيل الكاملة.
         </p>
       </div>
 
@@ -184,17 +187,22 @@ export default function AllStudentsPage() {
                   className="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/50"
                 >
                   <td className="px-6 py-4">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                        {student.full_name}
-                      </p>
-                      <p
-                        className="text-xs text-slate-500 dark:text-slate-400"
-                        dir="ltr"
-                      >
-                        {student.phone}
-                      </p>
-                    </div>
+                    <Link
+                      href={`/admin/students/${student.id}`}
+                      className="group inline-flex items-center gap-2"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                          {student.full_name}
+                        </p>
+                        <p
+                          className="text-xs text-slate-500 dark:text-slate-400"
+                          dir="ltr"
+                        >
+                          {student.phone}
+                        </p>
+                      </div>
+                    </Link>
                   </td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                     {GRADE_LABELS[student.grade_level] ??
@@ -221,25 +229,34 @@ export default function AllStudentsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleToggleBan(student)}
-                      disabled={processingId === student.id}
-                      className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                        student.is_banned
-                          ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400"
-                          : "bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/20 dark:text-rose-400"
-                      }`}
-                    >
-                      {student.is_banned ? (
-                        <>
-                          <ShieldCheck size={14} /> إعادة تفعيل
-                        </>
-                      ) : (
-                        <>
-                          <ShieldOff size={14} /> إيقاف
-                        </>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/students/${student.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                      >
+                        التفاصيل
+                        <ChevronLeft size={13} />
+                      </Link>
+                      <button
+                        onClick={() => handleToggleBan(student)}
+                        disabled={processingId === student.id}
+                        className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                          student.is_banned
+                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400"
+                            : "bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/20 dark:text-rose-400"
+                        }`}
+                      >
+                        {student.is_banned ? (
+                          <>
+                            <ShieldCheck size={14} /> إعادة تفعيل
+                          </>
+                        ) : (
+                          <>
+                            <ShieldOff size={14} /> إيقاف
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
