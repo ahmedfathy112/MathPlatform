@@ -21,7 +21,6 @@ const cairo = Cairo({
   weight: ["400", "500", "600", "700"],
 });
 
-// الـ Metadata الخاصة بمنصة الرياضيات
 export const metadata = {
   title: "منصة الأستاذ في الرياضيات | رحلتك نحو التفوّق",
   description:

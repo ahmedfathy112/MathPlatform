@@ -79,21 +79,19 @@ export default function StudentsPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            إدارة الطلاب
-          </h1>
-          <p className="mt-1 text-slate-600 dark:text-slate-400">
+          <h1 className="text-3xl font-bold text-slate-900">إدارة الطلاب</h1>
+          <p className="mt-1 text-slate-600">
             نظرة سريعة على قاعدة الطلاب وطلبات الاشتراك
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/admin/students/pending"
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
           >
             الطلاب المعلقين
             {stats.pendingRequests > 0 ? (
-              <span className="mr-2 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+              <span className="mr-2 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">
                 {stats.pendingRequests}
               </span>
             ) : null}
@@ -116,14 +114,14 @@ export default function StudentsPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                <p className="text-sm font-medium text-slate-600">
                   {stat.label}
                 </p>
-                <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                <p className="mt-2 text-2xl font-bold text-slate-900">
                   {isLoading ? "..." : stat.value}
                 </p>
               </div>
@@ -133,9 +131,9 @@ export default function StudentsPage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <h2 className="text-lg font-bold text-slate-900">
             أحدث الطلاب المسجّلين
           </h2>
         </div>
@@ -148,17 +146,17 @@ export default function StudentsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
+                <tr className="border-b border-slate-200">
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600">
                     اسم الطالب
                   </th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600">
                     الهاتف
                   </th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600">
                     الحالة
                   </th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600">
                     تاريخ الانضمام
                   </th>
                 </tr>
@@ -167,29 +165,26 @@ export default function StudentsPage() {
                 {recentStudents.map((student) => (
                   <tr
                     key={student.id}
-                    className="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/50"
+                    className="border-b border-slate-100 transition-colors hover:bg-slate-50"
                   >
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">
+                    <td className="px-6 py-4 text-sm font-medium text-slate-900">
                       {student.full_name}
                     </td>
-                    <td
-                      className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400"
-                      dir="ltr"
-                    >
+                    <td className="px-6 py-4 text-sm text-slate-600" dir="ltr">
                       {student.phone}
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                           student.is_banned
-                            ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
-                            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-emerald-100 text-emerald-700"
                         }`}
                       >
                         {student.is_banned ? "موقوف" : "نشط"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                    <td className="px-6 py-4 text-sm text-slate-500">
                       {formatDate(student.created_at)}
                     </td>
                   </tr>
@@ -199,10 +194,10 @@ export default function StudentsPage() {
           </div>
         )}
 
-        <div className="border-t border-slate-200 px-6 py-4 dark:border-slate-700">
+        <div className="border-t border-slate-200 px-6 py-4">
           <Link
             href="/admin/students/all"
-            className="text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-sm font-medium text-blue-600 transition-colors hover:text-blue-700"
           >
             عرض جميع الطلاب →
           </Link>

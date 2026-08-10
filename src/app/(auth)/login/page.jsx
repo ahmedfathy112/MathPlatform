@@ -235,9 +235,9 @@ function LoginForm() {
     >
       <div className="mx-auto grid min-h-screen w-full max-w-7xl lg:grid-cols-2">
         <section className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-12">
-          <div className="w-full max-w-xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900 sm:p-8">
+          <div className="w-full max-w-xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl sm:p-8">
             <div className="mb-8 space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 ">
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
                 <span>تسجيل دخول الطالب</span>
               </div>
@@ -301,7 +301,7 @@ function LoginForm() {
               <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                 <Link
                   href="/forgot-password"
-                  className="font-semibold text-sky-700 transition hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
+                  className="font-semibold text-sky-700 transition hover:text-sky-800 "
                 >
                   نسيت كلمة المرور؟
                 </Link>
@@ -309,7 +309,7 @@ function LoginForm() {
                   <span>ليس لديك حساب؟ </span>
                   <Link
                     href="/register"
-                    className="font-semibold text-sky-700 transition hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
+                    className="font-semibold text-sky-700 transition hover:text-sky-800 "
                   >
                     إنشاء حساب
                   </Link>
@@ -320,9 +320,9 @@ function LoginForm() {
         </section>
 
         <section className="relative hidden items-center justify-center overflow-hidden px-4 py-10 sm:px-6 lg:flex lg:px-12">
-          <div className="relative z-10 w-full max-w-xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900 sm:p-8">
+          <div className="relative z-10 w-full max-w-xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.10)] backdrop-blur-xl sm:p-8">
             <div className="space-y-7">
-              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 ">
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
                 <span>حساب الطالب</span>
               </div>
@@ -337,7 +337,7 @@ function LoginForm() {
                 </p>
               </div>
 
-              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 text-slate-800 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 text-slate-800 shadow-sm ">
                 <p className="text-lg font-semibold leading-9">
                   &quot;الرياضيات تكافئ الثبات، وكل يوم مراجعة يرفع من وضوحك
                   وثقتك.&quot;
@@ -345,7 +345,7 @@ function LoginForm() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="mb-4 inline-flex rounded-2xl bg-blue-600 p-3 text-white">
                     <Calculator className="h-5 w-5" aria-hidden="true" />
                   </div>
@@ -356,8 +356,8 @@ function LoginForm() {
                     محتوى واضح يبدأ من الأساسيات ويصل إلى المهارات المتقدمة.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                  <div className="mb-4 inline-flex rounded-2xl bg-slate-900 p-3 text-white dark:bg-slate-700">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ">
+                  <div className="mb-4 inline-flex rounded-2xl bg-slate-900 p-3 text-white">
                     <Sigma className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <p className="text-base font-semibold text-slate-900">
@@ -370,12 +370,12 @@ function LoginForm() {
               </div>
             </div>
 
-            <div className="mt-8 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div className="mt-8 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-slate-600 shadow-sm ">
               عند تسجيل الدخول، تأكد من إدخال رقم الهاتف الصحيح وكلمة المرور
               الخاصة بحسابك فقط.
             </div>
           </div>
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-blue-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-blue-100 " />
           <div
             className="pointer-events-none absolute inset-0 opacity-50"
             style={{
@@ -386,7 +386,7 @@ function LoginForm() {
           />
           <div className="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full bg-white/70 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 right-0 h-80 w-80 rounded-full bg-blue-200/50 blur-3xl" />
-          <div className="pointer-events-none absolute left-8 top-8 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900">
+          <div className="pointer-events-none absolute left-8 top-8 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-2xl backdrop-blur ">
             <p className="text-3xl font-bold text-sky-700 dark:text-sky-300">
               Σ
             </p>

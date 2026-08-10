@@ -9,9 +9,20 @@ import { Skeleton } from "../../../components/ui/Skeleton";
 import { GRADE_LABELS } from "../../../utils/supabase/adminHelpers";
 import { useAuthStore, selectProfile } from "../../../store/useAuthStore";
 
-const emptySubjectForm = { id: null, name: "", description: "", is_active: true };
+const emptySubjectForm = {
+  id: null,
+  name: "",
+  description: "",
+  is_active: true,
+};
 
-function SubjectFormModal({ initialValues, packageId, teacherId, onClose, onSaved }) {
+function SubjectFormModal({
+  initialValues,
+  packageId,
+  teacherId,
+  onClose,
+  onSaved,
+}) {
   const { showToast } = useToast();
   const [form, setForm] = useState(initialValues);
   const [isSaving, setIsSaving] = useState(false);
@@ -19,7 +30,8 @@ function SubjectFormModal({ initialValues, packageId, teacherId, onClose, onSave
 
   function updateField(field) {
     return (event) => {
-      const value = field === "is_active" ? event.target.checked : event.target.value;
+      const value =
+        field === "is_active" ? event.target.checked : event.target.value;
       setForm((prev) => ({ ...prev, [field]: value }));
     };
   }
@@ -63,14 +75,14 @@ function SubjectFormModal({ initialValues, packageId, teacherId, onClose, onSave
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl dark:bg-slate-800">
+      <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+          <h2 className="text-lg font-bold text-slate-900">
             {isEditing ? "تعديل المادة" : "إضافة مادة جديدة"}
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
           >
             <X size={18} />
           </button>
@@ -78,30 +90,28 @@ function SubjectFormModal({ initialValues, packageId, teacherId, onClose, onSave
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <label className="text-sm font-medium text-slate-700">
               اسم المادة
             </label>
             <input
               value={form.name}
               onChange={updateField("name")}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="مثال: الجبر والهندسة الفراغية"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-              الوصف
-            </label>
+            <label className="text-sm font-medium text-slate-700">الوصف</label>
             <textarea
               value={form.description}
               onChange={updateField("description")}
               rows={3}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
             <input
               type="checkbox"
               checked={form.is_active}
@@ -191,7 +201,10 @@ export default function PackageSubjectsPage({ params }) {
     }
 
     const supabase = createClient();
-    const { error } = await supabase.from("subjects").delete().eq("id", subject.id);
+    const { error } = await supabase
+      .from("subjects")
+      .delete()
+      .eq("id", subject.id);
 
     if (error) {
       showToast({ type: "error", message: "تعذر حذف المادة." });
@@ -213,11 +226,11 @@ export default function PackageSubjectsPage({ params }) {
 
   if (notFound) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <p className="text-slate-600 dark:text-slate-400">هذه الباقة غير موجودة.</p>
+      <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+        <p className="text-slate-600">هذه الباقة غير موجودة.</p>
         <Link
           href="/admin/packages"
-          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400"
+          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600"
         >
           العودة إلى الباقات
         </Link>
@@ -230,17 +243,17 @@ export default function PackageSubjectsPage({ params }) {
       <div>
         <Link
           href="/admin/packages"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
         >
           <ArrowRight size={16} />
           العودة إلى الباقات
         </Link>
         <div className="mt-4 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-slate-900">
               مواد باقة {pkg.name}
             </h1>
-            <p className="mt-1 text-slate-600 dark:text-slate-400">
+            <p className="mt-1 text-slate-600">
               {GRADE_LABELS[pkg.grade_level] ?? pkg.grade_level}
             </p>
           </div>
@@ -255,15 +268,15 @@ export default function PackageSubjectsPage({ params }) {
       </div>
 
       {subjects.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <p className="text-slate-600 dark:text-slate-400">
+        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <p className="text-slate-600">
             لا توجد مواد في هذه الباقة بعد. أضف أول مادة دراسية.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <table className="min-w-full text-sm text-slate-600 dark:text-slate-300">
-            <thead className="border-b border-slate-200 bg-slate-50 text-right dark:border-slate-700 dark:bg-slate-900">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full text-sm text-slate-600">
+            <thead className="border-b border-slate-200 bg-slate-50 text-right">
               <tr>
                 <th className="px-6 py-4 font-semibold">اسم المادة</th>
                 <th className="px-6 py-4 font-semibold">الوصف</th>
@@ -275,9 +288,9 @@ export default function PackageSubjectsPage({ params }) {
               {subjects.map((subject) => (
                 <tr
                   key={subject.id}
-                  className="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/50"
+                  className="border-b border-slate-100 transition-colors hover:bg-slate-50"
                 >
-                  <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
+                  <td className="px-6 py-4 font-semibold text-slate-900">
                     {subject.name}
                   </td>
                   <td className="px-6 py-4">{subject.description ?? "—"}</td>
@@ -285,8 +298,8 @@ export default function PackageSubjectsPage({ params }) {
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                         subject.is_active
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                          : "bg-slate-100 text-slate-600 dark:bg-slate-700/50 dark:text-slate-300"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-100 text-slate-600"
                       }`}
                     >
                       {subject.is_active ? "نشطة" : "معطلة"}
@@ -296,13 +309,13 @@ export default function PackageSubjectsPage({ params }) {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setModalState(subject)}
-                        className="rounded-lg border border-slate-200 p-2 text-slate-900 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700"
+                        className="rounded-lg border border-slate-200 p-2 text-slate-900 transition-colors hover:bg-slate-50"
                       >
                         <Edit size={15} />
                       </button>
                       <button
                         onClick={() => handleDelete(subject)}
-                        className="rounded-lg border border-red-200 p-2 text-red-600 transition-colors hover:bg-red-50 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20"
+                        className="rounded-lg border border-red-200 p-2 text-red-600 transition-colors hover:bg-red-50"
                       >
                         <Trash2 size={15} />
                       </button>

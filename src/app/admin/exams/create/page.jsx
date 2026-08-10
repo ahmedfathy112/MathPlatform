@@ -273,28 +273,24 @@ export default function CreateExamPage() {
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-          اختبار جديد
-        </h1>
-        <p className="mt-1 text-slate-600 dark:text-slate-400">
+        <h1 className="text-3xl font-bold text-slate-900">اختبار جديد</h1>
+        <p className="mt-1 text-slate-600">
           كل سؤال يحتاج صورة (للمسألة الرياضية) وخيارات نصية والإجابة الصحيحة.
         </p>
       </div>
 
-      <section className="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-          بيانات الاختبار
-        </h2>
+      <section className="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-slate-900">بيانات الاختبار</h2>
 
         <div>
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="text-sm font-medium text-slate-700">
             السنة الدراسية (الباقة)
           </label>
           <select
             value={examForm.packageId}
             onChange={updateExamField("packageId")}
             disabled={isLoadingPackages}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           >
             <option value="">
               {isLoadingPackages ? "جارٍ التحميل..." : "اختر السنة الدراسية"}
@@ -308,14 +304,12 @@ export default function CreateExamPage() {
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            المادة
-          </label>
+          <label className="text-sm font-medium text-slate-700">المادة</label>
           <select
             value={examForm.subjectId}
             onChange={updateExamField("subjectId")}
             disabled={!examForm.packageId || isLoadingSubjects}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           >
             <option value="">
               {!examForm.packageId
@@ -333,61 +327,61 @@ export default function CreateExamPage() {
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="text-sm font-medium text-slate-700">
             عنوان الاختبار
           </label>
           <input
             value={examForm.title}
             onChange={updateExamField("title")}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             placeholder="مثال: اختبار الوحدة الأولى"
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="text-sm font-medium text-slate-700">
             وصف (اختياري)
           </label>
           <textarea
             value={examForm.description}
             onChange={updateExamField("description")}
             rows={2}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <label className="text-sm font-medium text-slate-700">
               وقت البدء
             </label>
             <input
               type="datetime-local"
               value={examForm.startTime}
               onChange={updateExamField("startTime")}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <label className="text-sm font-medium text-slate-700 ">
               وقت الانتهاء
             </label>
             <input
               type="datetime-local"
               value={examForm.endTime}
               onChange={updateExamField("endTime")}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <label className="text-sm font-medium text-slate-700 ">
               المدة (دقيقة)
             </label>
             <input
               type="number"
               value={examForm.durationMinutes}
               onChange={updateExamField("durationMinutes")}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
         </div>
@@ -395,13 +389,13 @@ export default function CreateExamPage() {
 
       <section className="space-y-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+          <h2 className="text-lg font-bold text-slate-900 ">
             الأسئلة ({questions.length})
           </h2>
           <button
             type="button"
             onClick={addQuestion}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
           >
             <Plus size={16} /> إضافة سؤال
           </button>
@@ -410,17 +404,17 @@ export default function CreateExamPage() {
         {questions.map((question, index) => (
           <div
             key={question.clientId}
-            className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+            className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-semibold text-slate-500">
                 السؤال {index + 1}
               </p>
               {questions.length > 1 ? (
                 <button
                   type="button"
                   onClick={() => removeQuestion(question.clientId)}
-                  className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 "
                 >
                   <Trash2 size={16} />
                 </button>
@@ -445,7 +439,7 @@ export default function CreateExamPage() {
                   <img
                     src={question.imagePreviewUrl}
                     alt={`معاينة السؤال ${index + 1}`}
-                    className="w-full rounded-2xl border border-slate-200 object-contain dark:border-slate-700"
+                    className="w-full rounded-2xl border border-slate-200 object-contain"
                   />
                   <button
                     type="button"
@@ -463,7 +457,7 @@ export default function CreateExamPage() {
                   onClick={() =>
                     fileInputRefs.current[question.clientId]?.click()
                   }
-                  className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 py-10 text-slate-500 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 py-10 text-slate-500 transition hover:border-blue-400 hover:text-blue-600"
                 >
                   <ImagePlus size={28} />
                   <span className="text-sm font-medium">ارفع صورة السؤال</span>
@@ -474,7 +468,7 @@ export default function CreateExamPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {OPTION_KEYS.map((key) => (
                 <div key={key} className="flex items-center gap-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 ">
                     <input
                       type="radio"
                       name={`correct-${question.clientId}`}
@@ -496,12 +490,12 @@ export default function CreateExamPage() {
                       )
                     }
                     placeholder={`الخيار ${key}`}
-                    className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 "
                   />
                 </div>
               ))}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500 ">
               حدد الدائرة بجانب الإجابة الصحيحة.
             </p>
           </div>

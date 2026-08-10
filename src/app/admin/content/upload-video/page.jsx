@@ -124,7 +124,6 @@ export default function UploadVideoPage() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPackageId]);
 
   const onSubmit = async ({ subjectId, title, description, videoUrl }) => {
@@ -151,26 +150,24 @@ export default function UploadVideoPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-          إضافة فيديو جديد
-        </h1>
-        <p className="mt-1 text-slate-600 dark:text-slate-400">
+        <h1 className="text-3xl font-bold text-slate-900">إضافة فيديو جديد</h1>
+        <p className="mt-1 text-slate-600 ">
           أضف رابط فيديو خارجي (مثل Bunny.net) إلى إحدى مواد باقة دراسية.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+        className="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
       >
         <div>
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="text-sm font-medium text-slate-700">
             السنة الدراسية (الباقة)
           </label>
           <select
             {...register("packageId")}
             disabled={isLoadingPackages}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 "
           >
             <option value="">
               {isLoadingPackages ? "جارٍ التحميل..." : "اختر السنة الدراسية"}
@@ -189,13 +186,13 @@ export default function UploadVideoPage() {
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="text-sm font-medium text-slate-700 ">
             المادة الدراسية
           </label>
           <select
             {...register("subjectId")}
             disabled={!selectedPackageId || isLoadingSubjects}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 "
           >
             <option value="">
               {!selectedPackageId
@@ -218,12 +215,12 @@ export default function UploadVideoPage() {
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="text-sm font-medium text-slate-700 ">
             عنوان الدرس
           </label>
           <input
             {...register("title")}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 "
             placeholder="مثال: مقدمة في المعادلات التربيعية"
           />
           {errors.title ? (
@@ -232,18 +229,18 @@ export default function UploadVideoPage() {
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="text-sm font-medium text-slate-700">
             وصف الدرس (اختياري)
           </label>
           <textarea
             {...register("description")}
             rows={3}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 "
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="text-sm font-medium text-slate-700 ">
             رابط الفيديو
           </label>
           <div className="relative mt-2">
@@ -254,7 +251,7 @@ export default function UploadVideoPage() {
             <input
               {...register("videoUrl")}
               dir="ltr"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="https://iframe.mediadelivery.net/embed/..."
             />
           </div>

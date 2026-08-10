@@ -63,15 +63,11 @@ const ATTEMPT_STATUS_STYLES = {
 
 function SectionCard({ title, subtitle, children }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-5">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-          {title}
-        </h2>
+        <h2 className="text-lg font-bold text-slate-900">{title}</h2>
         {subtitle ? (
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {subtitle}
-          </p>
+          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
         ) : null}
       </div>
       {children}
@@ -252,13 +248,11 @@ export default function StudentProfilePage({ params }) {
 
   if (notFound) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <p className="text-slate-600 dark:text-slate-400">
-          هذا الطالب غير موجود.
-        </p>
+      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+        <p className="text-slate-600">هذا الطالب غير موجود.</p>
         <Link
           href="/admin/students/all"
-          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400"
+          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600"
         >
           العودة إلى قائمة الطلاب
         </Link>
@@ -282,7 +276,7 @@ export default function StudentProfilePage({ params }) {
       <div>
         <Link
           href="/admin/students/all"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
         >
           <ArrowRight size={16} />
           العودة إلى قائمة الطلاب
@@ -290,13 +284,13 @@ export default function StudentProfilePage({ params }) {
       </div>
 
       {/* General details */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-slate-900">
               {student.full_name}
             </h1>
-            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-400">
+            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600">
               <span className="inline-flex items-center gap-2">
                 <Phone size={15} />
                 <span dir="ltr">{student.phone}</span>
@@ -316,8 +310,8 @@ export default function StudentProfilePage({ params }) {
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
                 student.is_banned
-                  ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
-                  : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                  ? "bg-rose-100 text-rose-700"
+                  : "bg-emerald-100 text-emerald-700"
               }`}
             >
               {student.is_banned ? "محظور" : "نشط"}
@@ -327,8 +321,8 @@ export default function StudentProfilePage({ params }) {
               disabled={processingBan}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 student.is_banned
-                  ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400"
-                  : "bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/20 dark:text-rose-400"
+                  ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "bg-rose-50 text-rose-700 hover:bg-rose-100"
               }`}
             >
               {student.is_banned ? (
@@ -342,11 +336,11 @@ export default function StudentProfilePage({ params }) {
         </div>
 
         {averageScore !== null ? (
-          <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-5 text-sm dark:border-slate-700">
-            <span className="text-slate-500 dark:text-slate-400">
+          <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-5 text-sm">
+            <span className="text-slate-500">
               متوسط الدرجات في {submittedAttempts.length} اختبار
             </span>
-            <span className="text-lg font-bold text-slate-900 dark:text-white">
+            <span className="text-lg font-bold text-slate-900">
               {averageScore}%
             </span>
           </div>
@@ -359,7 +353,7 @@ export default function StudentProfilePage({ params }) {
         subtitle="كل باقة اشترك بها الطالب على مر الوقت"
       >
         {subscriptions.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500">
             لا يوجد سجل اشتراكات لهذا الطالب.
           </p>
         ) : (
@@ -367,13 +361,13 @@ export default function StudentProfilePage({ params }) {
             {subscriptions.map((sub) => (
               <div
                 key={sub.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4 text-sm dark:bg-slate-900"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4 text-sm"
               >
                 <div>
-                  <p className="font-semibold text-slate-900 dark:text-white">
+                  <p className="font-semibold text-slate-900">
                     {sub.package?.name ?? "—"}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-xs text-slate-500">
                     {sub.activated_at
                       ? `فُعّل في ${formatDate(sub.activated_at)}`
                       : `أُنشئ في ${formatDate(sub.created_at)}`}
@@ -402,7 +396,7 @@ export default function StudentProfilePage({ params }) {
         subtitle="كل طلبات الدفع المرسلة من الطالب"
       >
         {paymentRequests.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500">
             لا توجد طلبات دفع لهذا الطالب.
           </p>
         ) : (
@@ -421,7 +415,7 @@ export default function StudentProfilePage({ params }) {
                 {paymentRequests.map((request) => (
                   <tr
                     key={request.id}
-                    className="border-b border-slate-100 last:border-b-0 dark:border-slate-700"
+                    className="border-b border-slate-100 last:border-b-0"
                   >
                     <td className="px-3 py-3">
                       {request.package?.name ?? "—"}
@@ -454,7 +448,7 @@ export default function StudentProfilePage({ params }) {
                           request.status}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-xs text-slate-500 dark:text-slate-400">
+                    <td className="px-3 py-3 text-xs text-slate-500">
                       {formatDateTime(request.created_at)}
                     </td>
                   </tr>
@@ -471,13 +465,13 @@ export default function StudentProfilePage({ params }) {
         subtitle="كل محاولة اختبار قام بها الطالب"
       >
         {examAttempts.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500">
             لم يخض هذا الطالب أي اختبار بعد.
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm text-slate-600 dark:text-slate-300">
-              <thead className="border-b border-slate-200 text-right dark:border-slate-700">
+            <table className="min-w-full text-sm text-slate-600">
+              <thead className="border-b border-slate-200 text-right">
                 <tr>
                   <th className="px-3 py-3 font-semibold">الاختبار</th>
                   <th className="px-3 py-3 font-semibold">تاريخ الأداء</th>
@@ -489,17 +483,17 @@ export default function StudentProfilePage({ params }) {
                 {examAttempts.map((attempt) => (
                   <tr
                     key={attempt.id}
-                    className="border-b border-slate-100 last:border-b-0 dark:border-slate-700"
+                    className="border-b border-slate-100 last:border-b-0"
                   >
-                    <td className="px-3 py-3 font-medium text-slate-900 dark:text-white">
+                    <td className="px-3 py-3 font-medium text-slate-900">
                       {attempt.exam?.title ?? "—"}
                     </td>
-                    <td className="px-3 py-3 text-xs text-slate-500 dark:text-slate-400">
+                    <td className="px-3 py-3 text-xs text-slate-500">
                       {formatDateTime(attempt.started_at)}
                     </td>
                     <td className="px-3 py-3">
                       {attempt.score !== null ? (
-                        <span className="font-semibold text-slate-900 dark:text-white">
+                        <span className="font-semibold text-slate-900">
                           {attempt.score}%
                         </span>
                       ) : (

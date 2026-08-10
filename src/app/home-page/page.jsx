@@ -200,23 +200,23 @@ export function CoursesSection() {
       : "لا توجد باقات متاحة حالياً.";
 
   return (
-    <div className="mt-10 w-full space-y-6">
+    <div className="mt-10 w-full space-y-6 flex flex-wrap">
       {!isLoading && authStatus === "authenticated" && profile ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-sky-200 bg-sky-50 px-6 py-4 dark:border-sky-900/50 dark:bg-sky-950/30">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-sky-200 bg-sky-50 px-6 py-4">
           <div>
-            <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">
+            <p className="text-sm font-semibold text-sky-900">
               مرحبًا، {profile.full_name}
             </p>
-            <p className="text-xs text-sky-700 dark:text-sky-400">
+            <p className="text-xs text-sky-700">
               {GRADE_MAP[profile.grade_level] || profile.grade_level}
             </p>
           </div>
           {mode === "subscribed" ? (
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
               باقتك مفعّلة
             </span>
           ) : (
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
               لم تشترك بعد
             </span>
           )}
@@ -230,8 +230,8 @@ export function CoursesSection() {
           <Skeleton className="h-48 w-full rounded-3xl" />
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <p className="text-slate-600 dark:text-slate-400">{emptyMessage}</p>
+        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <p className="text-slate-600">{emptyMessage}</p>
         </div>
       ) : (
         <div className="flex w-full justify-center gap-6 max-md:flex-col">
@@ -364,7 +364,7 @@ const faqs = [
 
 function SectionLabel({ children }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 shadow-sm dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300">
+    <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 shadow-sm">
       <Sparkles className="h-4 w-4" aria-hidden="true" />
       <span>{children}</span>
     </div>
@@ -376,10 +376,10 @@ function SectionHeading({ label, title, description, centered = false }) {
     <div className={`space-y-4 ${centered ? "text-center" : "text-right"}`}>
       <SectionLabel>{label}</SectionLabel>
       <div className="space-y-3">
-        <h2 className="text-3xl font-bold leading-[1.25] text-slate-950 dark:text-white sm:text-4xl">
+        <h2 className="text-3xl font-bold leading-[1.25] text-slate-950 sm:text-4xl">
           {title}
         </h2>
-        <p className="max-w-3xl text-base leading-8 text-slate-600 dark:text-slate-300">
+        <p className="max-w-3xl text-base leading-8 text-slate-600 ">
           {description}
         </p>
       </div>
@@ -418,7 +418,7 @@ function CourseCard({ course }) {
     <motion.article
       variants={sectionVariants}
       whileHover={{ y: -8, scale: 1.01 }}
-      className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] transition-all duration-300 dark:border-slate-700 dark:bg-slate-900"
+      className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] transition-all duration-300"
     >
       <div
         className={`relative h-56 overflow-hidden bg-gradient-to-br ${course.tone}`}
@@ -463,20 +463,16 @@ function StepCard({ step, index }) {
   return (
     <motion.article
       variants={sectionVariants}
-      className="relative rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900"
+      className="relative rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]"
     >
       <div className="mb-5 flex items-center justify-between">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg dark:bg-slate-800">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg">
           <Icon className="h-5 w-5" aria-hidden="true" />
         </div>
-        <span className="text-4xl font-black text-slate-200 dark:text-slate-700">
-          0{index + 1}
-        </span>
+        <span className="text-4xl font-black text-slate-200">0{index + 1}</span>
       </div>
-      <h3 className="text-xl font-bold text-slate-950 dark:text-white">
-        {step.title}
-      </h3>
-      <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+      <h3 className="text-xl font-bold text-slate-950">{step.title}</h3>
+      <p className="mt-3 text-sm leading-7 text-slate-600">
         {step.description}
       </p>
     </motion.article>
@@ -488,7 +484,7 @@ function TestimonialCard({ testimonial }) {
     <motion.article
       variants={sectionVariants}
       whileHover={{ y: -6 }}
-      className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900"
+      className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]"
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -496,15 +492,13 @@ function TestimonialCard({ testimonial }) {
             {testimonial.name.slice(0, 1)}
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-950 dark:text-white">
+            <h3 className="text-base font-bold text-slate-950">
               {testimonial.name}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {testimonial.role}
-            </p>
+            <p className="text-xs text-slate-500">{testimonial.role}</p>
           </div>
         </div>
-        <div className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+        <div className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700">
           <Star className="h-4 w-4 fill-current" aria-hidden="true" />
           <span>{testimonial.score}</span>
         </div>
@@ -516,7 +510,7 @@ function TestimonialCard({ testimonial }) {
         <Star className="h-4 w-4 fill-current" aria-hidden="true" />
         <Star className="h-4 w-4 fill-current" aria-hidden="true" />
       </div>
-      <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+      <p className="mt-4 text-sm leading-7 text-slate-600">
         {testimonial.quote}
       </p>
     </motion.article>
@@ -525,7 +519,7 @@ function TestimonialCard({ testimonial }) {
 
 function FaqItem({ item, isOpen, onToggle, index }) {
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_14px_40px_rgba(15,23,42,0.06)] dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
       <button
         type="button"
         onClick={onToggle}
@@ -533,11 +527,11 @@ function FaqItem({ item, isOpen, onToggle, index }) {
         aria-controls={`faq-panel-${index}`}
         className="flex w-full items-center justify-between gap-4 px-5 py-4 text-right"
       >
-        <span className="text-base font-bold text-slate-950 dark:text-white">
+        <span className="text-base font-bold text-slate-950">
           {item.question}
         </span>
         {isOpen ? (
-          <ChevronUp className="h-5 w-5 shrink-0 text-sky-600 dark:text-sky-300" />
+          <ChevronUp className="h-5 w-5 shrink-0 text-sky-600" />
         ) : (
           <ChevronDown className="h-5 w-5 shrink-0 text-slate-400" />
         )}
@@ -552,7 +546,7 @@ function FaqItem({ item, isOpen, onToggle, index }) {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="border-t border-slate-200 px-5 py-4 text-sm leading-7 text-slate-600 dark:border-slate-700 dark:text-slate-300">
+            <div className="border-t border-slate-200 px-5 py-4 text-sm leading-7 text-slate-600">
               {item.answer}
             </div>
           </motion.div>
@@ -592,8 +586,8 @@ function LandingPage() {
       <MainNavbar />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[34rem] bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.22),transparent_30%),radial-gradient(circle_at_top_left,rgba(99,102,241,0.18),transparent_34%),linear-gradient(to_bottom,rgba(239,246,255,0.9),rgba(255,255,255,0))] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_top_left,rgba(99,102,241,0.12),transparent_34%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,0))]" />
-      <div className="pointer-events-none absolute left-0 top-24 -z-10 h-80 w-80 rounded-full bg-sky-200/30 blur-3xl dark:bg-sky-500/10" />
-      <div className="pointer-events-none absolute right-0 top-64 -z-10 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl dark:bg-indigo-500/10" />
+      <div className="pointer-events-none absolute left-0 top-24 -z-10 h-80 w-80 rounded-full bg-sky-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-64 -z-10 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl" />
 
       <section
         id="hero"
@@ -603,9 +597,9 @@ function LandingPage() {
           variants={sectionVariants}
           initial="hidden"
           animate="visible"
-          className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-900"
+          className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.10)]"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-sky-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-sky-50" />
           <motion.div
             animate={{ y: [0, -14, 0] }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
@@ -625,10 +619,10 @@ function LandingPage() {
               className="relative flex-1 text-right"
             >
               <SectionLabel>منصة تعليمية مصممة للتحويل والثقة</SectionLabel>
-              <h1 className="mt-6 max-w-3xl text-4xl font-black leading-[1.2] tracking-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
+              <h1 className="mt-6 max-w-3xl text-4xl font-black leading-[1.2] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
                 أتقن الرياضيات بثقة، وابدأ من هنا نحو أعلى النتائج
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600 dark:text-slate-300 sm:text-xl">
+              <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600 sm:text-xl">
                 منهجية شرح متدرجة، متابعة ذكية، واختبارات دورية تجعل كل فكرة
                 واضحة وكل خطوة محسوبة، لتصل إلى أعلى مستوى بأقل تعقيد.
               </p>
@@ -643,7 +637,7 @@ function LandingPage() {
                 </Link>
                 <Link
                   href="/login"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-sky-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-sky-500/15"
                 >
                   <span>تسجيل الدخول</span>
                 </Link>
@@ -660,7 +654,7 @@ function LandingPage() {
                 ].map((item) => (
                   <div
                     key={item}
-                    className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-200"
+                    className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm"
                   >
                     {item}
                   </div>
@@ -682,17 +676,17 @@ function LandingPage() {
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="absolute -right-4 -top-8 z-10 rounded-[1.5rem] border border-slate-200 bg-white/95 p-4 shadow-[0_20px_40px_rgba(15,23,42,0.12)] backdrop-blur dark:border-slate-700 dark:bg-slate-900"
+                  className="absolute -right-4 -top-8 z-10 rounded-[1.5rem] border border-slate-200 bg-white/95 p-4 shadow-[0_20px_40px_rgba(15,23,42,0.12)] backdrop-blur"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
                       <ShieldCheck className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-slate-950 dark:text-white">
+                      <p className="text-sm font-bold text-slate-950">
                         ثقة وأمان
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500 ">
                         حسابات مرتبة وتجربة واضحة
                       </p>
                     </div>
@@ -706,43 +700,43 @@ function LandingPage() {
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="absolute -left-2 -bottom-10 z-10 rounded-[1.5rem] border border-slate-200 bg-white/95 p-4 shadow-[0_20px_40px_rgba(15,23,42,0.12)] backdrop-blur dark:border-slate-700 dark:bg-slate-900"
+                  className="absolute -left-2 -bottom-10 z-10 rounded-[1.5rem] border border-slate-200 bg-white/95 p-4 shadow-[0_20px_40px_rgba(15,23,42,0.12)] backdrop-blur"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white dark:bg-slate-800">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
                       <Sparkles className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-slate-950 dark:text-white">
+                      <p className="text-sm font-bold text-slate-950">
                         متابعة ذكية
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500 ">
                         كل خطوة محسوبة بدقة
                       </p>
                     </div>
                   </div>
                 </motion.div>
 
-                <div className="relative overflow-hidden rounded-[2.25rem] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.12)] dark:border-slate-700 dark:bg-slate-950 sm:p-7">
+                <div className="relative overflow-hidden rounded-[2.25rem] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.12)] sm:p-7">
                   <div className="grid gap-5 sm:grid-cols-[1.05fr_0.95fr]">
                     <div className="space-y-5">
-                      <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900">
+                      <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                          <p className="text-sm font-semibold text-slate-500">
                             رحلة الطالب
                           </p>
-                          <p className="text-lg font-black text-blue-600 dark:text-blue-400">
+                          <p className="text-lg font-black text-blue-600">
                             ٩٨٪
                           </p>
                         </div>
                         <div className="mt-4 space-y-3">
                           {[74, 91, 68, 96, 86].map((value, index) => (
                             <div key={index} className="space-y-2">
-                              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                              <div className="flex items-center justify-between text-xs text-slate-500">
                                 <span>درس {index + 1}</span>
                                 <span>{value}%</span>
                               </div>
-                              <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                              <div className="h-2 overflow-hidden rounded-full bg-slate-200">
                                 <motion.div
                                   initial={{ width: 0 }}
                                   animate={{ width: `${value}%` }}
@@ -759,19 +753,19 @@ function LandingPage() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
+                        <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 ">
                           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                             عدد الحصص
                           </p>
-                          <p className="mt-2 text-3xl font-black text-slate-950 dark:text-white">
+                          <p className="mt-2 text-3xl font-black text-slate-950">
                             ١٢
                           </p>
                         </div>
-                        <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
-                          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 ">
+                          <p className="text-xs font-semibold text-slate-500 ">
                             مستوى الثقة
                           </p>
-                          <p className="mt-2 text-3xl font-black text-sky-600 dark:text-sky-400">
+                          <p className="mt-2 text-3xl font-black text-sky-600">
                             عالي
                           </p>
                         </div>
@@ -940,7 +934,7 @@ function LandingPage() {
       {/* FOOTER */}
       <footer
         id="footer"
-        className="border-t border-slate-200 bg-slate-950 px-4 py-16 text-slate-100 dark:border-slate-800 sm:px-6 lg:px-8"
+        className="border-t border-slate-200 bg-slate-950 px-4 py-16 text-slate-100 sm:px-6 lg:px-8"
       >
         <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[1.2fr_0.8fr_0.8fr]">
           <div className="space-y-5 text-right">

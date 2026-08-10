@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function AdminLayout({ children }) {
   return (
-    <div className="flex min-h-screen bg-[var(--background)] dark:bg-slate-950">
+    <div className="flex min-h-screen bg-[var(--background)] ">
       <div className="hidden md:block">
         <AdminSidebar />
       </div>
@@ -17,7 +17,7 @@ export default function AdminLayout({ children }) {
       <div className="flex min-h-screen flex-1 flex-col">
         <AdminNavbar />
 
-        <main className="flex-1 overflow-y-auto bg-[var(--background)] dark:bg-slate-950">
+        <main className="flex-1 overflow-y-auto bg-[var(--background)] ">
           <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <RequireRole allow={["teacher"]}>{children}</RequireRole>
           </div>

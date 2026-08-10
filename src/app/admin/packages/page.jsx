@@ -73,14 +73,14 @@ function PackageFormModal({ initialValues, teacherId, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl dark:bg-slate-800">
+      <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+          <h2 className="text-lg font-bold text-slate-900">
             {isEditing ? "تعديل الباقة" : "باقة جديدة"}
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
           >
             <X size={18} />
           </button>
@@ -88,25 +88,25 @@ function PackageFormModal({ initialValues, teacherId, onClose, onSaved }) {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <label className="text-sm font-medium text-slate-700">
               اسم الباقة (السنة الدراسية)
             </label>
             <input
               value={form.name}
               onChange={updateField("name")}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="مثال: باقة الصف الثاني الثانوي"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <label className="text-sm font-medium text-slate-700">
               الصف الدراسي
             </label>
             <select
               value={form.grade_level}
               onChange={updateField("grade_level")}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             >
               {GRADE_OPTIONS.map(([value, label]) => (
                 <option key={value} value={value}>
@@ -117,31 +117,29 @@ function PackageFormModal({ initialValues, teacherId, onClose, onSaved }) {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <label className="text-sm font-medium text-slate-700">
               السعر (جنيه)
             </label>
             <input
               type="number"
               value={form.price_egp}
               onChange={updateField("price_egp")}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="مثال: 500"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-              الوصف
-            </label>
+            <label className="text-sm font-medium text-slate-700">الوصف</label>
             <textarea
               value={form.description}
               onChange={updateField("description")}
               rows={3}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
             <input
               type="checkbox"
               checked={form.is_active}
@@ -176,12 +174,18 @@ export default function PackagesPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    const [{ data: packageRows, error }, { data: subjectRows }, { data: subscriptionRows }] =
-      await Promise.all([
-        supabase.from("packages").select("*").order("created_at", { ascending: false }),
-        supabase.from("subjects").select("id, package_id"),
-        supabase.from("subscriptions").select("package_id, status"),
-      ]);
+    const [
+      { data: packageRows, error },
+      { data: subjectRows },
+      { data: subscriptionRows },
+    ] = await Promise.all([
+      supabase
+        .from("packages")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase.from("subjects").select("id, package_id"),
+      supabase.from("subscriptions").select("package_id, status"),
+    ]);
 
     if (error) {
       showToast({ type: "error", message: "تعذر تحميل الباقات." });
@@ -247,10 +251,8 @@ export default function PackagesPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            إدارة الباقات
-          </h1>
-          <p className="mt-1 text-slate-600 dark:text-slate-400">
+          <h1 className="text-3xl font-bold text-slate-900">إدارة الباقات</h1>
+          <p className="mt-1 text-slate-600">
             كل باقة تمثل سنة دراسية كاملة، وتحتوي على مجموعة من المواد
           </p>
         </div>
@@ -270,8 +272,8 @@ export default function PackagesPage() {
           ))}
         </div>
       ) : packages.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <p className="text-slate-600 dark:text-slate-400">
+        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <p className="text-slate-600">
             لا توجد باقات بعد. أنشئ أول باقة (سنة دراسية).
           </p>
         </div>
@@ -280,38 +282,35 @@ export default function PackagesPage() {
           {packages.map((pkg) => (
             <div
               key={pkg.id}
-              className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg dark:border-slate-700 dark:bg-slate-800"
+              className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg"
             >
               <div className="mb-4 flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-lg font-bold text-slate-900">
                     {pkg.name}
                   </h3>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-sm text-slate-500">
                     {GRADE_LABELS[pkg.grade_level] ?? pkg.grade_level}
                   </p>
                   {pkg.price_egp ? (
-                    <p className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <p className="mt-1 text-2xl font-bold text-blue-600">
                       {pkg.price_egp}
-                      <span className="text-sm text-slate-600 dark:text-slate-400">
-                        {" "}
-                        ج.م
-                      </span>
+                      <span className="text-sm text-slate-600"> ج.م</span>
                     </p>
                   ) : null}
                 </div>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
                     pkg.is_active
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                      : "bg-slate-100 text-slate-600 dark:bg-slate-700/50 dark:text-slate-300"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-slate-100 text-slate-600"
                   }`}
                 >
                   {pkg.is_active ? "نشطة" : "معطلة"}
                 </span>
               </div>
 
-              <div className="mb-4 grid grid-cols-2 gap-2 border-y border-slate-200 py-4 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-400">
+              <div className="mb-4 grid grid-cols-2 gap-2 border-y border-slate-200 py-4 text-sm text-slate-600">
                 <div className="flex items-center gap-2">
                   <BookOpen size={16} />
                   <span>{pkg.subjectCount} مادة</span>
@@ -323,28 +322,26 @@ export default function PackagesPage() {
               </div>
 
               {pkg.description ? (
-                <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-                  {pkg.description}
-                </p>
+                <p className="mb-4 text-sm text-slate-600">{pkg.description}</p>
               ) : null}
 
               <div className="flex items-center gap-2">
                 <Link
                   href={`/admin/packages/${pkg.id}`}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
                 >
                   <BookOpen size={15} />
                   إدارة المواد
                 </Link>
                 <button
                   onClick={() => setModalState(pkg)}
-                  className="rounded-lg border border-slate-200 p-2 text-slate-900 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700"
+                  className="rounded-lg border border-slate-200 p-2 text-slate-900 transition-colors hover:bg-slate-50"
                 >
                   <Edit size={16} />
                 </button>
                 <button
                   onClick={() => handleDelete(pkg)}
-                  className="rounded-lg border border-red-200 p-2 text-red-600 transition-colors hover:bg-red-50 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20"
+                  className="rounded-lg border border-red-200 p-2 text-red-600 transition-colors hover:bg-red-50"
                 >
                   <Trash2 size={16} />
                 </button>

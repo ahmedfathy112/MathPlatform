@@ -112,10 +112,8 @@ export default function CoursesPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            إدارة الدورات
-          </h1>
-          <p className="mt-1 text-slate-600 dark:text-slate-400">
+          <h1 className="text-3xl font-bold text-slate-900">إدارة الدورات</h1>
+          <p className="mt-1 text-slate-600 ">
             تصفح فيديوهات كل مادة، وأضف دروسًا جديدة بسهولة.
           </p>
         </div>
@@ -130,7 +128,7 @@ export default function CoursesPage() {
       {isLoadingSubjects ? (
         <Skeleton className="h-96 w-full rounded-3xl" />
       ) : subjects.length === 0 ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
           <p className="text-slate-600 dark:text-slate-400">
             لا توجد مواد بعد. أنشئها من صفحة "إدارة المواد" أولًا.
           </p>
@@ -144,14 +142,14 @@ export default function CoursesPage() {
                 onClick={() => setActiveSubjectId(subject.id)}
                 className={`group rounded-3xl border p-6 text-right transition ${
                   activeSubjectId === subject.id
-                    ? "border-blue-500 bg-blue-50 shadow-sm dark:border-blue-400/40 dark:bg-slate-900"
-                    : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-400 dark:hover:bg-slate-900"
+                    ? "border-blue-500 bg-blue-50 shadow-sm "
+                    : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"
                 }`}
               >
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                <h2 className="text-xl font-semibold text-slate-900 ">
                   {subject.name}
                 </h2>
-                <div className="mt-6 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <div className="mt-6 flex items-center gap-2 text-sm text-slate-600 ">
                   <Users size={16} />
                   <span>{subject.activeStudents} طالب نشط في الباقة</span>
                 </div>
@@ -159,17 +157,17 @@ export default function CoursesPage() {
             ))}
           </div>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-medium text-slate-500 ">
                   المادة الحالية
                 </p>
-                <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">
                   {activeSubject?.name ?? "—"}
                 </h2>
               </div>
-              <div className="rounded-3xl bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+              <div className="rounded-3xl bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 ">
                 {videos.length} فيديو
               </div>
             </div>
@@ -178,24 +176,24 @@ export default function CoursesPage() {
               {isLoadingVideos ? (
                 <Skeleton className="h-40 w-full rounded-3xl" />
               ) : videos.length === 0 ? (
-                <p className="rounded-3xl bg-slate-50 p-5 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-400">
+                <p className="rounded-3xl bg-slate-50 p-5 text-sm text-slate-600 ">
                   لا توجد فيديوهات لهذه المادة بعد.
                 </p>
               ) : (
                 videos.map((video) => (
                   <div
                     key={video.id}
-                    className="flex items-center justify-between gap-3 rounded-3xl bg-slate-50 p-4 dark:bg-slate-900"
+                    className="flex items-center justify-between gap-3 rounded-3xl bg-slate-50 p-4 "
                   >
                     <div className="flex items-center gap-3">
                       <PlayCircle size={22} className="text-blue-600" />
-                      <p className="font-medium text-slate-900 dark:text-white">
+                      <p className="font-medium text-slate-900 ">
                         {video.title}
                       </p>
                     </div>
                     <button
                       onClick={() => handleDeleteVideo(video.id)}
-                      className="rounded-lg p-2 text-red-500 transition hover:bg-red-100 dark:hover:bg-red-900/20"
+                      className="rounded-lg p-2 text-red-500 transition hover:bg-red-100"
                     >
                       <Trash2 size={16} />
                     </button>

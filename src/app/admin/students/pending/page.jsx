@@ -25,7 +25,9 @@ export default function PendingStudentsPage() {
     // version-dependent against this project's setup.
     const { data: requestRows, error } = await supabase
       .from("payment_requests")
-      .select("id, amount_claimed, whatsapp_reference, created_at, student_id, package_id")
+      .select(
+        "id, amount_claimed, whatsapp_reference, created_at, student_id, package_id",
+      )
       .eq("status", "pending")
       .order("created_at", { ascending: true });
 
@@ -41,7 +43,10 @@ export default function PendingStudentsPage() {
 
     const [{ data: studentRows }, { data: packageRows }] = await Promise.all([
       studentIds.length
-        ? supabase.from("profiles").select("id, full_name, phone").in("id", studentIds)
+        ? supabase
+            .from("profiles")
+            .select("id, full_name, phone")
+            .in("id", studentIds)
         : Promise.resolve({ data: [] }),
       packageIds.length
         ? supabase.from("packages").select("id, name").in("id", packageIds)
@@ -111,19 +116,17 @@ export default function PendingStudentsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-          الطلاب المعلقين
-        </h1>
-        <p className="mt-1 text-slate-600 dark:text-slate-400">
+        <h1 className="text-3xl font-bold text-slate-900">الطلاب المعلقين</h1>
+        <p className="mt-1 text-slate-600">
           راجع طلبات الدفع المعلقة واعتمدها لتفعيل الاشتراك مباشرة.
         </p>
       </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-sm font-medium text-slate-500">
           عدد الطلبات المعلقة
         </p>
-        <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
+        <p className="mt-2 text-3xl font-bold text-slate-900">
           {isLoading ? "..." : requests.length}
         </p>
       </div>
@@ -135,38 +138,36 @@ export default function PendingStudentsPage() {
           ))}
         </div>
       ) : requests.length === 0 ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <p className="text-slate-600 dark:text-slate-400">
-            لا توجد طلبات معلقة حاليًا. 🎉
-          </p>
+        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <p className="text-slate-600">لا توجد طلبات معلقة حاليًا. 🎉</p>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           {requests.map((request) => (
             <div
               key={request.id}
-              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-lg dark:border-slate-700 dark:bg-slate-800"
+              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-lg"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                  <h2 className="text-xl font-semibold text-slate-900">
                     {request.student?.full_name ?? "طالب"}
                   </h2>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  <p className="mt-2 text-sm text-slate-600">
                     اشتراك في باقة: {request.package?.name ?? "—"}
                   </p>
                 </div>
-                <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
                   قيد المراجعة
                 </span>
               </div>
 
-              <div className="mt-5 space-y-3 border-t border-slate-200 pt-5 dark:border-slate-700">
-                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+              <div className="mt-5 space-y-3 border-t border-slate-200 pt-5">
+                <div className="flex items-center gap-3 text-sm text-slate-600">
                   <Phone size={16} />
                   <span dir="ltr">{request.student?.phone ?? "—"}</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                <div className="flex items-center gap-3 text-sm text-slate-600">
                   <Wallet size={16} />
                   <span>
                     {request.amount_claimed
@@ -175,7 +176,7 @@ export default function PendingStudentsPage() {
                     — رقم العملية: {request.whatsapp_reference ?? "—"}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                <div className="flex items-center gap-3 text-sm text-slate-600">
                   <Clock size={16} />
                   <span>تم التقديم {formatDateTime(request.created_at)}</span>
                 </div>
@@ -193,7 +194,7 @@ export default function PendingStudentsPage() {
                 <button
                   onClick={() => handleReject(request.id)}
                   disabled={processingId === request.id}
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700"
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <XCircle size={16} />
                   رفض الطلب

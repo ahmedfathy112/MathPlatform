@@ -113,7 +113,7 @@ function TextField({
     <div className="space-y-2">
       <label
         htmlFor={id}
-        className="text-sm font-semibold text-slate-700 dark:text-slate-200"
+        className="text-sm font-semibold text-slate-700"
       >
         {label}
       </label>
@@ -156,7 +156,7 @@ function SelectField({
     <div className="space-y-2">
       <label
         htmlFor={id}
-        className="text-sm font-semibold text-slate-700 dark:text-slate-200"
+        className="text-sm font-semibold text-slate-700 "
       >
         {label}
       </label>
@@ -208,7 +208,7 @@ function PasswordField({
     <div className="space-y-2">
       <label
         htmlFor={id}
-        className="text-sm font-semibold text-slate-700 dark:text-slate-200"
+        className="text-sm font-semibold text-slate-700"
       >
         {label}
       </label>
@@ -236,7 +236,7 @@ function PasswordField({
           onClick={() => setVisible((current) => !current)}
           aria-label={visible ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
           aria-pressed={visible}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:text-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-500/20"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-sky-500/20"
         >
           <ToggleIcon className="h-5 w-5" aria-hidden="true" />
         </button>
@@ -327,11 +327,11 @@ export default function RegisterPage() {
       className="min-h-screen bg-[var(--background)] text-[var(--foreground)]"
     >
       <div className="mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-        <div className="w-full max-w-3xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full max-w-3xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.10)] backdrop-blur-xl">
           <div className="h-2 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500" />
           <div className="space-y-6 px-6 py-8 sm:px-8">
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700">
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
                 <span>إنشاء حساب طالب</span>
               </div>
@@ -346,7 +346,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-sky-900 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+            <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-sky-900 shadow-sm ">
               تأكد من صحة البيانات قبل الإرسال حتى يكون حسابك جاهزًا للاستخدام
               بدون أي تعارضات.
             </div>
@@ -434,7 +434,7 @@ export default function RegisterPage() {
                 <span>لديك حساب بالفعل؟ </span>
                 <Link
                   href="/login"
-                  className="font-semibold text-sky-700 transition hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
+                  className="font-semibold text-sky-700 transition hover:text-sky-800"
                 >
                   تسجيل الدخول
                 </Link>

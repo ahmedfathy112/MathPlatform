@@ -10,7 +10,7 @@ import { formatDateTime } from "../utils/supabase/adminHelpers";
 /** One column of the ledger strip. Label small-caps above, figure big and tabular below — no icon, no card shadow. */
 function LedgerStat({ label, value, tone, isLoading }) {
   return (
-    <div className="flex-1 px-6 py-5 first:pr-0 last:pl-0">
+    <div className="flex-1 px-6 py-5 ">
       <p className="font-mono text-[11px] uppercase tracking-wider text-[#8A9587]">
         {label}
       </p>
@@ -194,7 +194,7 @@ export default function AdminPage() {
 
       {/* Ledger strip — one ruled bar, columns divided by hairlines, no
           icon-in-box tiles and no drop shadows. */}
-      <div className="flex divide-x divide-x-reverse divide-[#DCE3D8] rounded-md border border-[#DCE3D8] bg-white">
+      <div className="flex divide-x divide-x-reverse divide-[#DCE3D8] rounded-md border border-[#DCE3D8] bg-white max-md:flex-col max-md:divide-x-0 max-md:divide-y max-md:justify-center">
         <LedgerStat
           label="إجمالي الطلاب"
           value={stats.totalStudents}
