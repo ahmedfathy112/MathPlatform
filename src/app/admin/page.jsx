@@ -7,7 +7,7 @@ import { createClient } from "../utils/supabase/client";
 import { useToast } from "../components/ui/ToastProvider";
 import { formatDateTime } from "../utils/supabase/adminHelpers";
 
-/** One column of the ledger strip. Label small-caps above, figure big and tabular below — no icon, no card shadow. */
+
 function LedgerStat({ label, value, tone, isLoading }) {
   return (
     <div className="flex-1 px-6 py-5 ">

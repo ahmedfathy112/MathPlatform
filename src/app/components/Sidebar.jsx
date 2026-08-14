@@ -11,11 +11,11 @@ const links = [
     label: "تصفح الباقات",
     icon: PackageOpen,
   },
-  // {
-  //   href: "/dashboard/classes/exams",
-  //   label: "جدول الامتحانات",
-  //   icon: CalendarDays,
-  // },
+  {
+    href: "/dashboard/exams",
+    label: "الامتحانات القادمة",
+    icon: CalendarDays,
+  },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
