@@ -14,12 +14,21 @@ const STATUS_FILTERS = [
   { key: "banned", label: "موقوف" },
 ];
 
+const GRADE_FILTERS = [
+  { key: "all", label: "كل الصفوف" },
+  ...Object.entries(GRADE_LABELS).map(([value, label]) => ({
+    key: value,
+    label,
+  })),
+];
+
 export default function AllStudentsPage() {
   const { showToast } = useToast();
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [gradeFilter, setGradeFilter] = useState("all");
   const [processingId, setProcessingId] = useState(null);
 
   const loadStudents = useCallback(async () => {
@@ -74,7 +83,18 @@ export default function AllStudentsPage() {
   }, []);
 
   useEffect(() => {
-    loadStudents();
+    let isActive = true;
+
+    const run = async () => {
+      if (!isActive) return;
+      await loadStudents();
+    };
+
+    run();
+
+    return () => {
+      isActive = false;
+    };
   }, [loadStudents]);
 
   const filteredStudents = useMemo(() => {
@@ -88,9 +108,12 @@ export default function AllStudentsPage() {
         statusFilter === "all" ||
         (statusFilter === "banned" ? student.is_banned : !student.is_banned);
 
-      return matchesSearch && matchesStatus;
+      const matchesGrade =
+        gradeFilter === "all" || student.grade_level === gradeFilter;
+
+      return matchesSearch && matchesStatus && matchesGrade;
     });
-  }, [students, search, statusFilter]);
+  }, [students, search, statusFilter, gradeFilter]);
 
   async function handleToggleBan(student) {
     setProcessingId(student.id);
@@ -145,20 +168,38 @@ export default function AllStudentsPage() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {STATUS_FILTERS.map((option) => (
-              <button
-                key={option.key}
-                onClick={() => setStatusFilter(option.key)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  statusFilter === option.key
-                    ? "bg-blue-600 text-white"
-                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {STATUS_FILTERS.map((option) => (
+                <button
+                  key={option.key}
+                  onClick={() => setStatusFilter(option.key)}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    statusFilter === option.key
+                      ? "bg-blue-600 text-white"
+                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {GRADE_FILTERS.map((option) => (
+                <button
+                  key={option.key}
+                  onClick={() => setGradeFilter(option.key)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    gradeFilter === option.key
+                      ? "bg-indigo-600 text-white"
+                      : "border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -166,107 +207,102 @@ export default function AllStudentsPage() {
       {isLoading ? (
         <Skeleton className="h-96 w-full rounded-3xl" />
       ) : (
-        <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full text-left text-sm text-slate-600">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>
-                <th className="px-6 py-4 font-semibold">الطالب</th>
-                <th className="px-6 py-4 font-semibold">الصف</th>
-                <th className="px-6 py-4 font-semibold">الباقات النشطة</th>
-                <th className="px-6 py-4 font-semibold">تاريخ الانضمام</th>
-                <th className="px-6 py-4 font-semibold">الحالة</th>
-                <th className="px-6 py-4 font-semibold">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStudents.map((student) => (
-                <tr
-                  key={student.id}
-                  className="border-b border-slate-100 transition-colors hover:bg-slate-50"
+        <div className="w-full flex flex-row flex-wrap gap-4 max-md:flex-col">
+          {filteredStudents.map((student) => (
+            <div
+              key={student.id}
+              className="w-[30%] rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(37,99,235,0.08)]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white shadow-sm">
+                    {student.full_name?.charAt(0) ?? "؟"}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-bold text-slate-900">
+                      {student.full_name?.split(" ").slice(0, 2).join(" ") ||
+                        "غير محدد"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500" dir="ltr">
+                      {student.phone}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    student.is_banned
+                      ? "bg-rose-100 text-rose-700"
+                      : "bg-emerald-100 text-emerald-700"
+                  }`}
                 >
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/admin/students/${student.id}`}
-                      className="group inline-flex items-center gap-2"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600">
-                          {student.full_name}
-                        </p>
-                        <p className="text-xs text-slate-500" dir="ltr">
-                          {student.phone}
-                        </p>
-                      </div>
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
+                  {student.is_banned ? "موقوف" : "نشط"}
+                </span>
+              </div>
+
+              <div className="mt-5 space-y-3 text-sm text-slate-600">
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                  <span className="text-slate-500">الصف</span>
+                  <span className="font-semibold text-slate-700">
                     {GRADE_LABELS[student.grade_level] ??
                       student.grade_level ??
                       "—"}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
+                  </span>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                  <p className="mt-2 text-xs leading-6 text-slate-600">
                     {student.activePackages.length > 0
-                      ? student.activePackages.join("، ")
-                      : "لا يوجد"}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
+                      ? student.activePackages.join(" • ")
+                      : "لا يوجد باقات نشطة"}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                  <span className="text-slate-500">تاريخ الانضمام</span>
+                  <span className="font-semibold text-slate-700">
                     {formatDate(student.created_at)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                        student.is_banned
-                          ? "bg-rose-100 text-rose-700"
-                          : "bg-emerald-100 text-emerald-700"
-                      }`}
-                    >
-                      {student.is_banned ? "موقوف" : "نشط"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/students/${student.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
-                      >
-                        التفاصيل
-                        <ChevronLeft size={13} />
-                      </Link>
-                      <button
-                        onClick={() => handleToggleBan(student)}
-                        disabled={processingId === student.id}
-                        className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                          student.is_banned
-                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                            : "bg-rose-50 text-rose-700 hover:bg-rose-100"
-                        }`}
-                      >
-                        {student.is_banned ? (
-                          <>
-                            <ShieldCheck size={14} /> إعادة تفعيل
-                          </>
-                        ) : (
-                          <>
-                            <ShieldOff size={14} /> إيقاف
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filteredStudents.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-10 text-center text-slate-500"
-                  >
-                    لا يوجد طلاب مطابقون لهذا البحث.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/admin/students/${student.id}`}
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-700"
+                >
+                  التفاصيل
+                  <ChevronLeft size={13} />
+                </Link>
+
+                <button
+                  onClick={() => handleToggleBan(student)}
+                  disabled={processingId === student.id}
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    student.is_banned
+                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                      : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+                  }`}
+                >
+                  {student.is_banned ? (
+                    <>
+                      <ShieldCheck size={14} /> تفعيل
+                    </>
+                  ) : (
+                    <>
+                      <ShieldOff size={14} /> إيقاف
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {filteredStudents.length === 0 ? (
+            <div className="rounded-[28px] border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500 md:col-span-2 xl:col-span-3">
+              لا يوجد طلاب مطابقون لهذا البحث.
+            </div>
+          ) : null}
         </div>
       )}
 
