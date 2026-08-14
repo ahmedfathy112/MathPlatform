@@ -211,7 +211,7 @@ export default function AllStudentsPage() {
           {filteredStudents.map((student) => (
             <div
               key={student.id}
-              className="w-[30%] rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(37,99,235,0.08)]"
+              className="w-[30%] rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(37,99,235,0.08)] max-md:w-full"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
